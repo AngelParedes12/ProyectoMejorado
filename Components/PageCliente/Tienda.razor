@@ -1,0 +1,151 @@
+﻿@page "/tienda"
+@using ProyectoMejorado.Components.Models
+@using ProyectoMejorado.Components.Services
+@inject ProductoService productoService
+@inject CarritoService carritoService
+@inject NavigationManager nav
+@rendermode InteractiveServer
+
+<PageTitle>Tienda</PageTitle>
+
+<!-- 🛒 Botón flotante del carrito -->
+<div class="position-fixed top-0 end-0 m-4" style="z-index: 1000;">
+    <a href="/carrito" class="btn btn-primary position-relative shadow animate-button">
+        <i class="bi bi-cart3"></i> Carrito
+        @if (carritoService.ObtenerCantidadTotal() > 0)
+        {
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                @carritoService.ObtenerCantidadTotal()
+            </span>
+        }
+    </a>
+</div>
+
+<!-- 🔎 Buscador y filtro -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <input type="text" class="form-control w-50 me-3 shadow-sm" placeholder="Buscar producto..." @bind="busqueda" @bind:event="oninput" />
+    <select class="form-select w-25 shadow-sm" @bind="categoriaSeleccionada">
+        <option value="">Todas las categorías</option>
+        @foreach (var c in categorias.Distinct())
+        {
+            <option value="@c">@c</option>
+        }
+    </select>
+</div>
+
+<h3 class="text-center text-primary mb-3"><i class="bi bi-shop-window me-2"></i> Catálogo de Productos</h3>
+
+@if (productosFiltrados is null)
+{
+    <p class="text-center">Cargando productos...</p>
+}
+else if (!productosFiltrados.Any())
+{
+    <div class="alert alert-info text-center">No se encontraron productos.</div>
+}
+else
+{
+    <div class="row">
+        @foreach (var p in productosFiltrados)
+        {
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 shadow-sm border-0 rounded-4 product-card">
+                    @if (!string.IsNullOrEmpty(p.ImagenUrl))
+                    {
+                        <img src="@p.ImagenUrl" class="card-img-top rounded-top-4" style="object-fit: cover; height: 200px;" />
+                    }
+
+                    <div class="card-body d-flex flex-column justify-content-between">
+                        <div>
+                            <h5 class="card-title fw-bold text-primary">@p.Nombre</h5>
+                            <span class="badge bg-dark-subtle text-secondary mb-2">@p.Categoria</span>
+                            <p class="text-muted small">@p.Descripcion</p>
+                        </div>
+
+                        <div class="mt-auto">
+                            <h5 class="text-success fw-bold mb-2">RD$ @p.Precio</h5>
+
+                            <div class="mb-2">
+                                <strong>Stock:</strong>
+                                <span class="badge @(p.CantidadDisponible > 5 ? "bg-success" : "bg-warning text-dark")">
+                                    @(p.CantidadDisponible > 0 ? $"{p.CantidadDisponible} disponible" : "Agotado")
+                                </span>
+                            </div>
+
+                            @if (p.CantidadDisponible > 0)
+                            {
+                                <button class="btn btn-outline-primary w-100 animate-button" @onclick="@(() => AgregarAlCarrito(p))">
+                                    <i class="bi bi-cart-plus me-1"></i> Agregar al carrito
+                                </button>
+                            }
+                            else
+                            {
+                                <button class="btn btn-outline-secondary w-100" disabled>
+                                    <i class="bi bi-x-circle me-1"></i> Sin stock
+                                </button>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(mensaje))
+{
+    <div class="alert @tipoAlerta text-center fw-semibold mt-3">@mensaje</div>
+}
+
+@code {
+    private List<Producto> productos = new();
+    private List<Producto> productosFiltrados = new();
+    private string mensaje = "";
+    private string tipoAlerta = "alert-success";
+    private string busqueda = "";
+    private string categoriaSeleccionada = "";
+    private List<string> categorias = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        productos = await productoService.ObtenerProductos();
+        categorias = productos.Select(p => p.Categoria ?? "Sin categoría").Distinct().ToList();
+        FiltrarProductos();
+    }
+
+    private void AgregarAlCarrito(Producto p)
+    {
+        carritoService.Agregar(new ItemCarrito
+            {
+                ProductoId = p.Id,
+                Nombre = p.Nombre,
+                Precio = p.Precio,
+                ImagenUrl = p.ImagenUrl,
+                Cantidad = 1
+            });
+
+        mensaje = $"✅ '{p.Nombre}' se agregó al carrito.";
+        tipoAlerta = "alert-success";
+        FiltrarProductos();
+
+        _ = Task.Delay(3000).ContinueWith(_ =>
+        {
+            mensaje = "";
+            InvokeAsync(StateHasChanged);
+        });
+    }
+
+    private void FiltrarProductos()
+    {
+        productosFiltrados = productos
+            .Where(p =>
+                (string.IsNullOrEmpty(busqueda) || p.Nombre.Contains(busqueda, StringComparison.OrdinalIgnoreCase)) &&
+                (string.IsNullOrEmpty(categoriaSeleccionada) || p.Categoria == categoriaSeleccionada))
+            .ToList();
+    }
+
+    protected override void OnParametersSet()
+    {
+        FiltrarProductos();
+    }
+}

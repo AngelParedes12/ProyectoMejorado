@@ -1,0 +1,109 @@
+﻿@page "/admin/ordenes"
+@attribute [Authorize(Roles = "Admin,Tecnico")]
+@using Microsoft.AspNetCore.Authorization
+@using ProyectoMejorado.Data
+@using ProyectoMejorado.Components.Models
+@using Microsoft.AspNetCore.Identity
+@inject ApplicationDbContext context
+@inject UserManager<ApplicationUser> userManager
+@rendermode InteractiveServer
+
+<h3 class="text-primary mb-4">
+    <i class="bi bi-list-check me-2"></i> Órdenes de Reparación
+</h3>
+
+<div class="row mb-4">
+    <div class="col-md-4">
+        <label>Técnico</label>
+        <InputSelect class="form-select" @bind-Value="tecnicoFiltro">
+            <option value="">Todos</option>
+            @foreach (var tecnico in tecnicos)
+            {
+                <option value="@tecnico.Id">@tecnico.Email</option>
+            }
+        </InputSelect>
+    </div>
+    <div class="col-md-4">
+        <label>Estado</label>
+        <InputSelect class="form-select" @bind-Value="estadoFiltro">
+            <option value="">Todos</option>
+            <option value="Pendiente">Pendiente</option>
+            <option value="En proceso">En proceso</option>
+            <option value="Reparado">Reparado</option>
+            <option value="Entregado">Entregado</option>
+        </InputSelect>
+    </div>
+    <div class="col-md-4 d-flex align-items-end">
+        <button class="btn btn-primary w-100" @onclick="FiltrarOrdenes">
+            <i class="bi bi-funnel me-2"></i> Filtrar
+        </button>
+    </div>
+</div>
+
+@if (ordenesFiltradas == null)
+{
+    <p>Cargando órdenes...</p>
+}
+else if (!ordenesFiltradas.Any())
+{
+    <div class="alert alert-warning">No se encontraron órdenes con los filtros aplicados.</div>
+}
+else
+{
+    <table class="table table-bordered table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>Cliente</th>
+                <th>Equipo</th>
+                <th>Problema</th>
+                <th>Fecha</th>
+                <th>Estado</th>
+                <th>Técnico</th>
+                <th>Acción</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var orden in ordenesFiltradas)
+            {
+                var tecnico = tecnicos.FirstOrDefault(t => t.Id == orden.TecnicoAsignadoId);
+                <tr>
+                    <td>@orden.ClienteNombre</td>
+                    <td>@orden.DescripcionEquipo</td>
+                    <td>@orden.ProblemaReportado</td>
+                    <td>@orden.FechaIngreso.ToString("dd/MM/yyyy")</td>
+                    <td><span class="badge bg-secondary">@orden.Estado</span></td>
+                    <td>@tecnico?.Email</td>
+                    <td>
+                        <NavLink class="btn btn-sm btn-outline-primary" href="@($"/admin/ordenes/editar/{orden.Id}")">
+                            <i class="bi bi-pencil-square"></i> Editar
+                        </NavLink>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<OrdenReparacion>? todasLasOrdenes;
+    private List<OrdenReparacion> ordenesFiltradas = new();
+    private List<ApplicationUser> tecnicos = new();
+    private string tecnicoFiltro = "";
+    private string estadoFiltro = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        todasLasOrdenes = context.OrdenesReparacion.ToList();
+        ordenesFiltradas = todasLasOrdenes;
+        tecnicos = (await userManager.GetUsersInRoleAsync("Tecnico")).ToList();
+    }
+
+    private void FiltrarOrdenes()
+    {
+        ordenesFiltradas = todasLasOrdenes!
+            .Where(o =>
+                (string.IsNullOrEmpty(tecnicoFiltro) || o.TecnicoAsignadoId == tecnicoFiltro) &&
+                (string.IsNullOrEmpty(estadoFiltro) || o.Estado == estadoFiltro))
+            .ToList();
+    }
+}

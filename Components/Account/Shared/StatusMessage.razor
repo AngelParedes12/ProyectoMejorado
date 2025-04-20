@@ -1,29 +1,14 @@
-﻿@if (!string.IsNullOrEmpty(DisplayMessage))
+﻿@* Componente reutilizable para mostrar mensajes de estado *@
+
+@if (!string.IsNullOrEmpty(Message))
 {
-    var statusMessageClass = DisplayMessage.StartsWith("Error") ? "danger" : "success";
-    <div class="alert alert-@statusMessageClass" role="alert">
-        @DisplayMessage
+    var statusClass = Message.StartsWith("Error") ? "danger" : "success";
+    <div class="alert alert-@statusClass text-center fw-semibold" role="alert">
+        @Message
     </div>
 }
 
 @code {
-    private string? messageFromCookie;
-
     [Parameter]
     public string? Message { get; set; }
-
-    [CascadingParameter]
-    private HttpContext HttpContext { get; set; } = default!;
-
-    private string? DisplayMessage => Message ?? messageFromCookie;
-
-    protected override void OnInitialized()
-    {
-        messageFromCookie = HttpContext.Request.Cookies[IdentityRedirectManager.StatusCookieName];
-
-        if (messageFromCookie is not null)
-        {
-            HttpContext.Response.Cookies.Delete(IdentityRedirectManager.StatusCookieName);
-        }
-    }
 }

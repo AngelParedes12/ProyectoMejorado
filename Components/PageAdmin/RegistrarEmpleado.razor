@@ -1,0 +1,85 @@
+﻿@page "/admin/registrar-empleado"
+@attribute [Authorize(Roles = "Admin")]
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using ProyectoMejorado.Components.Models
+@using ProyectoMejorado.Data
+@inject UserManager<ApplicationUser> userManager
+@inject NavigationManager Navigation
+@inject RoleManager<IdentityRole> roleManager
+@rendermode InteractiveServer
+
+<h3 class="text-primary mb-4"><i class="bi bi-person-plus me-2"></i> Registrar Usuario</h3>
+
+<EditForm Model="nuevoUsuario" OnValidSubmit="RegistrarUsuario" formName="RegistrarEmpleadoForm">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label>Nombre completo</label>
+        <InputText class="form-control" @bind-Value="nuevoUsuario.Nombre" />
+    </div>
+
+    <div class="mb-3">
+        <label>Email</label>
+        <InputText class="form-control" @bind-Value="nuevoUsuario.Email" />
+    </div>
+
+    <div class="mb-3">
+        <label>Contraseña</label>
+        <InputText class="form-control" type="password" @bind-Value="nuevoUsuario.Contrasena" />
+    </div>
+
+    <div class="mb-3">
+        <label>Rol</label>
+        <InputSelect class="form-select" @bind-Value="nuevoUsuario.Rol">
+            <option value="">Seleccione un rol</option>
+            <option value="Empleado">Empleado</option>
+            <option value="Tecnico">Técnico</option>
+        </InputSelect>
+    </div>
+
+    <button class="btn btn-success w-100">
+        <i class="bi bi-floppy me-2"></i> Registrar
+    </button>
+</EditForm>
+
+@if (!string.IsNullOrEmpty(mensaje))
+{
+    <div class="alert @claseAlerta mt-3">@mensaje</div>
+}
+
+@code {
+    private NuevoUsuarioModel nuevoUsuario = new();
+    private string mensaje = string.Empty;
+    private string claseAlerta = "alert-info";
+
+    private async Task RegistrarUsuario()
+    {
+        mensaje = "Procesando...";
+        claseAlerta = "alert-info";
+
+        var usuario = new ApplicationUser
+            {
+                UserName = nuevoUsuario.Email,
+                Email = nuevoUsuario.Email,
+                NombreCompleto = nuevoUsuario.Nombre,
+                EmailConfirmed = true
+            };
+
+        var resultado = await userManager.CreateAsync(usuario, nuevoUsuario.Contrasena);
+
+        if (resultado.Succeeded)
+        {
+            await userManager.AddToRoleAsync(usuario, nuevoUsuario.Rol);
+            mensaje = "✅ Usuario registrado correctamente.";
+            claseAlerta = "alert-success";
+            nuevoUsuario = new();
+        }
+        else
+        {
+            mensaje = "❌ Error: " + string.Join(", ", resultado.Errors.Select(e => e.Description));
+            claseAlerta = "alert-danger";
+        }
+    }
+}

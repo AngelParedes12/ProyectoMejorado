@@ -1,10 +1,9 @@
 ﻿@implements IDisposable
-
 @inject NavigationManager NavigationManager
 
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="">ProyectoMejorado</a>
+        <a class="navbar-brand" href="/">ProyectoMejorado</a>
     </div>
 </div>
 
@@ -12,56 +11,110 @@
 
 <div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
     <nav class="nav flex-column">
+
+        <!-- 🛒 Tienda visible para todos -->
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
+            <NavLink class="nav-link" href="/tienda">
+                <i class="bi bi-shop me-2"></i> Tienda
             </NavLink>
         </div>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
-            </NavLink>
-        </div>
+        <!-- 🔧 Sección para Admin, Empleado, Técnico -->
+        <AuthorizeView Roles="Admin,Empleado,Tecnico" Context="adminContext">
+            <div class="nav-item px-3 mt-3">
+                <NavLink class="nav-link" href="/admin/dashboard">
+                    <i class="bi bi-bar-chart me-2"></i> Dashboard
+                </NavLink>
+            </div>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
-            </NavLink>
-        </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="/admin/ordenes">
+                    <i class="bi bi-list-check me-2"></i> Ver Órdenes
+                </NavLink>
+            </div>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="auth">
-                <span class="bi bi-lock-nav-menu" aria-hidden="true"></span> Auth Required
-            </NavLink>
-        </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="/admin/pedidos">
+                    <i class="bi bi-receipt me-2"></i> Ver Pedidos
+                </NavLink>
+            </div>
 
-        <AuthorizeView>
-            <Authorized>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="/admin/productos/crear">
+                    <i class="bi bi-plus-square me-2"></i> Registrar Producto
+                </NavLink>
+            </div>
+
+            <!-- ✅ Nueva opción: Ajustar stock existente -->
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="/admin/ajustar-stock">
+                    <i class="bi bi-boxes me-2"></i> Ajustar Stock
+                </NavLink>
+            </div>
+
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="/admin/usuarios">
+                    <i class="bi bi-people me-2"></i> Ver Usuarios
+                </NavLink>
+            </div>
+
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="/admin/registrar-empleado">
+                    <i class="bi bi-person-plus me-2"></i> Registrar Usuario
+                </NavLink>
+            </div>
+
+            <!-- 👨‍🔧 Técnico -->
+            <AuthorizeView Roles="Admin,Tecnico" Context="tecnicoContext">
                 <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="/tecnico/ordenes">
+                        <i class="bi bi-clipboard-check me-2"></i> Mis Órdenes
+                    </NavLink>
+                </div>
+            </AuthorizeView>
+
+            <!-- 👨‍💼 Empleado -->
+            <AuthorizeView Roles="Empleado,Admin" Context="empleadoContext">
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="/empleado/registrar-orden">
+                        <i class="bi bi-tools me-2"></i> Registrar Orden
+                    </NavLink>
+                </div>
+            </AuthorizeView>
+        </AuthorizeView>
+
+        <!-- 👤 Sección cuenta (Cliente, Admin, Empleado, Técnico) -->
+        <AuthorizeView Context="cuentaContext">
+            <Authorized>
+                <div class="nav-item px-3 mt-4 small">
                     <NavLink class="nav-link" href="Account/Manage">
-                        <span class="bi bi-person-fill-nav-menu" aria-hidden="true"></span> @context.User.Identity?.Name
+                        <i class="bi bi-person-circle me-2"></i> @cuentaContext.User.Identity?.Name
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="/mis-pedidos">
+                        <i class="bi bi-receipt me-2"></i> Mis Pedidos
                     </NavLink>
                 </div>
                 <div class="nav-item px-3">
                     <form action="Account/Logout" method="post">
                         <AntiforgeryToken />
                         <input type="hidden" name="ReturnUrl" value="@currentUrl" />
-                        <button type="submit" class="nav-link">
-                            <span class="bi bi-arrow-bar-left-nav-menu" aria-hidden="true"></span> Logout
+                        <button type="submit" class="nav-link btn btn-link text-start">
+                            <i class="bi bi-box-arrow-left me-2"></i> Logout
                         </button>
                     </form>
                 </div>
             </Authorized>
             <NotAuthorized>
-                <div class="nav-item px-3">
+                <div class="nav-item px-3 mt-4">
                     <NavLink class="nav-link" href="Account/Register">
-                        <span class="bi bi-person-nav-menu" aria-hidden="true"></span> Register
+                        <i class="bi bi-person-plus me-2"></i> Registrarse
                     </NavLink>
                 </div>
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="Account/Login">
-                        <span class="bi bi-person-badge-nav-menu" aria-hidden="true"></span> Login
+                        <i class="bi bi-box-arrow-in-right me-2"></i> Login
                     </NavLink>
                 </div>
             </NotAuthorized>
@@ -89,4 +142,3 @@
         NavigationManager.LocationChanged -= OnLocationChanged;
     }
 }
-

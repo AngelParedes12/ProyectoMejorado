@@ -1,0 +1,57 @@
+﻿@page "/admin/usuarios"
+@attribute [Authorize(Roles = "Admin")]
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using ProyectoMejorado.Data
+@inject UserManager<ApplicationUser> userManager
+@inject RoleManager<IdentityRole> roleManager
+@rendermode InteractiveServer
+
+<h3 class="text-primary mb-4"><i class="bi bi-people me-2"></i> Lista de Usuarios</h3>
+
+@if (usuarios == null)
+{
+    <p>Cargando usuarios...</p>
+}
+else if (!usuarios.Any())
+{
+    <div class="alert alert-warning">No hay usuarios registrados.</div>
+}
+else
+{
+    <table class="table table-bordered table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>Nombre</th>
+                <th>Email</th>
+                <th>Rol</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var usuario in usuarios)
+            {
+                <tr>
+                    <td>@usuario.NombreCompleto</td>
+                    <td>@usuario.Email</td>
+                    <td>@(rolesPorUsuario.TryGetValue(usuario.Id, out var rol) ? rol : "Sin rol")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<ApplicationUser>? usuarios;
+    private Dictionary<string, string> rolesPorUsuario = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        usuarios = userManager.Users.ToList();
+
+        foreach (var user in usuarios)
+        {
+            var roles = await userManager.GetRolesAsync(user);
+            rolesPorUsuario[user.Id] = roles.FirstOrDefault() ?? "Sin rol";
+        }
+    }
+}

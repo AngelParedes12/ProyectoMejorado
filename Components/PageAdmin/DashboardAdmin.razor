@@ -1,0 +1,114 @@
+﻿@page "/admin/dashboard"
+@attribute [Authorize(Roles = "Admin")]
+@using Microsoft.AspNetCore.Authorization
+@using ProyectoMejorado.Components.Models
+@using ProyectoMejorado.Data
+@using Microsoft.EntityFrameworkCore
+@inject ApplicationDbContext context
+@rendermode InteractiveServer
+
+<PageTitle>Dashboard</PageTitle>
+
+<h3 class="text-primary mb-4"><i class="bi bi-bar-chart me-2"></i> Panel de Administración</h3>
+
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+    <div class="bg-white shadow rounded-2xl p-4">
+        <h6 class="text-gray-600">Total Órdenes</h6>
+        <p class="text-2xl font-bold text-blue-600">@dashboard.TotalOrdenes</p>
+    </div>
+    <div class="bg-white shadow rounded-2xl p-4">
+        <h6 class="text-gray-600">Órdenes Pendientes</h6>
+        <p class="text-2xl font-bold text-orange-500">@dashboard.OrdenesPorEstado.GetValueOrDefault("Pendiente")</p>
+    </div>
+    <div class="bg-white shadow rounded-2xl p-4">
+        <h6 class="text-gray-600">Órdenes Entregadas</h6>
+        <p class="text-2xl font-bold text-green-600">@dashboard.OrdenesPorEstado.GetValueOrDefault("Entregado")</p>
+    </div>
+    <div class="bg-white shadow rounded-2xl p-4">
+        <h6 class="text-gray-600">Total Clientes</h6>
+        <p class="text-2xl font-bold text-purple-600">@dashboard.TotalClientes</p>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+    <div class="bg-white p-4 rounded-2xl shadow">
+        <h6 class="font-semibold mb-2">Órdenes por Estado</h6>
+        <BarChart width="450" height="300" data="@dashboard.OrdenesPorEstado.Select(e => new { Estado = e.Key, Cantidad = e.Value })">
+            <XAxis dataKey="Estado" />
+            <YAxis />
+            <Tooltip />
+            <Bar dataKey="Cantidad" />
+        </BarChart>
+    </div>
+
+    <div class="bg-white p-4 rounded-2xl shadow">
+        <h6 class="font-semibold mb-2">Top Ventas por Producto</h6>
+        <PieChart width="400" height="300">
+            <Pie data="@dashboard.VentasPorProducto.Select(p => new { Producto = p.Key, Total = p.Value })"
+                 dataKey="Total" nameKey="Producto" cx="50%" cy="50%" outerRadius="100" />
+            <Tooltip />
+        </PieChart>
+    </div>
+</div>
+
+<div class="bg-white p-4 rounded-2xl shadow mb-5">
+    <h6 class="font-semibold mb-2">Pedidos por Mes</h6>
+    <BarChart width="800" height="300" data="@dashboard.PedidosPorMes.Select(p => new { Mes = p.Key, Cantidad = p.Value })">
+        <XAxis dataKey="Mes" />
+        <YAxis />
+        <Tooltip />
+        <Bar dataKey="Cantidad" />
+    </BarChart>
+</div>
+
+<div class="bg-white p-4 rounded-2xl shadow mb-5">
+    <h6 class="font-semibold mb-2">📦 Productos con Bajo Stock (≤ 5 unidades)</h6>
+    @if (dashboard.ProductosBajoStock.Any())
+    {
+        <BarChart width="800" height="300" data="@dashboard.ProductosBajoStock.Select(p => new { Producto = p.Key, Stock = p.Value })">
+            <XAxis dataKey="Producto" />
+            <YAxis />
+            <Tooltip />
+            <Bar dataKey="Stock" />
+        </BarChart>
+    }
+    else
+    {
+        <div class="alert alert-success">🎉 Todos los productos tienen suficiente stock.</div>
+    }
+</div>
+
+@code {
+    private DashboardInfo dashboard = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        dashboard.TotalOrdenes = await context.OrdenesReparacion.CountAsync();
+        dashboard.TotalClientes = await context.Users.CountAsync();
+        dashboard.TotalPedidos = await context.OrdenesClientes.CountAsync();
+        dashboard.TotalProductos = await context.Productos.CountAsync();
+
+        dashboard.OrdenesPorEstado = await context.OrdenesReparacion
+            .GroupBy(o => o.Estado)
+            .Select(g => new { Estado = g.Key, Cantidad = g.Count() })
+            .ToDictionaryAsync(g => g.Estado, g => g.Cantidad);
+
+        dashboard.VentasPorProducto = await context.OrdenesClientes
+            .GroupBy(o => o.Productos)
+            .Select(g => new { Producto = g.Key, Total = g.Count() })
+            .OrderByDescending(g => g.Total)
+            .Take(5)
+            .ToDictionaryAsync(g => g.Producto, g => g.Total);
+
+        dashboard.PedidosPorMes = await context.OrdenesClientes
+            .GroupBy(o => o.Fecha.Month)
+            .Select(g => new { Mes = new DateTime(2025, g.Key, 1).ToString("MMM"), Cantidad = g.Count() })
+            .ToDictionaryAsync(g => g.Mes, g => g.Cantidad);
+
+        dashboard.ProductosBajoStock = await context.Productos
+            .Where(p => p.CantidadDisponible <= 5)
+            .OrderBy(p => p.CantidadDisponible)
+            .Select(p => new { p.Nombre, p.CantidadDisponible })
+            .ToDictionaryAsync(p => p.Nombre, p => p.CantidadDisponible);
+    }
+}

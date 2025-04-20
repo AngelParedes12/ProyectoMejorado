@@ -1,0 +1,153 @@
+﻿@page "/mis-pedidos"
+@attribute [Authorize]
+@using Microsoft.AspNetCore.Authorization
+@using ProyectoMejorado.Data
+@using ProyectoMejorado.Components.Models
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@inject ApplicationDbContext context
+@inject UserManager<ApplicationUser> userManager
+@inject AuthenticationStateProvider authProvider
+@rendermode InteractiveServer
+
+<PageTitle>Mis Pedidos</PageTitle>
+
+<h3 class="text-primary mb-4"><i class="bi bi-card-checklist me-2"></i> Mis Pedidos</h3>
+
+@if (isLoading)
+{
+    <div class="text-center">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Cargando...</span>
+        </div>
+    </div>
+}
+else if (!pedidos.Any())
+{
+    <div class="alert alert-info text-center">No tienes pedidos registrados aún.</div>
+}
+else
+{
+    <div class="row">
+        @foreach (var pedido in pedidos.OrderByDescending(p => p.Fecha))
+        {
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card shadow-sm border-0 h-100 rounded-4">
+                    <div class="card-body d-flex flex-column">
+                        <h6 class="fw-bold text-primary mb-2">
+                            🧾 Pedido del @pedido.Fecha.ToString("dd/MM/yyyy")
+                        </h6>
+                        <p class="mb-1"><strong>Productos:</strong> @pedido.Productos</p>
+                        <p class="mb-1"><strong>Dirección:</strong> @pedido.DireccionEnvio</p>
+                        <p class="mb-1"><strong>Método de Pago:</strong> @pedido.MetodoPago</p>
+                        <p>
+                            <strong>Estado:</strong>
+                            <span class="badge @(pedido.Estado switch
+                            {
+                                "Pendiente" => "bg-warning text-dark",
+                                "Procesado" => "bg-primary",
+                                "Enviado" => "bg-info text-dark",
+                                "Entregado" => "bg-success",
+                                "Cancelado" => "bg-danger",
+                                _ => "bg-secondary"
+                            })">@pedido.Estado</span>
+                        </p>
+
+                        <div class="mt-auto d-flex justify-content-between align-items-center">
+                            <span class="badge bg-success fs-6">RD$ @pedido.Total</span>
+                            <span class="text-muted small">@pedido.Fecha.ToShortTimeString()</span>
+                        </div>
+
+                        <NavLink class="btn btn-sm btn-outline-primary mt-3" href="@($"/mis-pedidos/{pedido.Id}")">
+                            <i class="bi bi-eye"></i> Ver Detalle
+                        </NavLink>
+
+                        @if (pedido.Estado == "Pendiente")
+                        {
+                            <button class="btn btn-sm btn-outline-danger mt-2" @onclick="() => ConfirmarCancelacion(pedido.Id)">
+                                <i class="bi bi-x-circle"></i> Cancelar Pedido
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@if (mostrarConfirmacion)
+{
+    <div class="modal fade show d-block" style="background-color: rgba(0,0,0,0.4);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-3 shadow">
+                <div class="modal-header">
+                    <h5 class="modal-title text-danger">Confirmar Cancelación</h5>
+                    <button type="button" class="btn-close" @onclick="CerrarModal"></button>
+                </div>
+                <div class="modal-body">
+                    ¿Estás seguro de que deseas cancelar este pedido?
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @onclick="CerrarModal">No</button>
+                    <button class="btn btn-danger" @onclick="() => CancelarPedido(idParaCancelar)">Sí, Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<OrdenCliente> pedidos = new();
+    private bool isLoading = true;
+
+    private bool mostrarConfirmacion = false;
+    private int idParaCancelar;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarPedidos();
+    }
+
+    private async Task CargarPedidos()
+    {
+        isLoading = true;
+
+        var auth = await authProvider.GetAuthenticationStateAsync();
+        var user = await userManager.GetUserAsync(auth.User);
+
+        if (user != null && !string.IsNullOrEmpty(user.Email))
+        {
+            pedidos = await context.OrdenesClientes
+                .Where(p => p.ClienteEmail == user.Email)
+                .ToListAsync();
+        }
+
+        isLoading = false;
+    }
+
+    private void ConfirmarCancelacion(int id)
+    {
+        idParaCancelar = id;
+        mostrarConfirmacion = true;
+    }
+
+    private void CerrarModal()
+    {
+        mostrarConfirmacion = false;
+        idParaCancelar = 0;
+    }
+
+    private async Task CancelarPedido(int id)
+    {
+        var pedido = await context.OrdenesClientes.FindAsync(id);
+        if (pedido != null && pedido.Estado == "Pendiente")
+        {
+            pedido.Estado = "Cancelado";
+            context.OrdenesClientes.Update(pedido);
+            await context.SaveChangesAsync();
+
+            await CargarPedidos();
+            mostrarConfirmacion = false;
+        }
+    }
+}

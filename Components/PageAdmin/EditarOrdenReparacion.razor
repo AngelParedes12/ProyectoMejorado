@@ -1,0 +1,93 @@
+﻿@page "/admin/ordenes/editar/{id:int}"
+@attribute [Authorize(Roles = "Admin,Tecnico")]
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Forms
+@using ProyectoMejorado.Data
+@using ProyectoMejorado.Components.Models
+@inject ApplicationDbContext context
+@inject NavigationManager nav
+@rendermode InteractiveServer
+
+<PageTitle>Editar Orden</PageTitle>
+
+<h3 class="text-primary mb-4">🔧 Editar Estado de la Orden</h3>
+
+@if (orden == null)
+{
+    <div class="alert alert-warning">Cargando orden...</div>
+}
+else
+{
+    <EditForm Model="orden" OnValidSubmit="GuardarCambios" FormName="editarOrdenForm">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="card shadow p-4 rounded-4">
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Cliente</label>
+                <InputText class="form-control" @bind-Value="orden.ClienteNombre" disabled />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Equipo</label>
+                <InputText class="form-control" @bind-Value="orden.DescripcionEquipo" disabled />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Problema Reportado</label>
+                <InputTextArea class="form-control" @bind-Value="orden.ProblemaReportado" disabled rows="3" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Estado</label>
+                <InputSelect class="form-select" @bind-Value="orden.Estado">
+                    <option value="Pendiente">Pendiente</option>
+                    <option value="En proceso">En proceso</option>
+                    <option value="Reparado">Reparado</option>
+                    <option value="Entregado">Entregado</option>
+                    <option value="Cancelado">Cancelado</option>
+                </InputSelect>
+            </div>
+
+            <button type="submit" class="btn btn-success w-100">
+                <i class="bi bi-check-circle me-1"></i> Guardar Cambios
+            </button>
+
+            @if (!string.IsNullOrEmpty(mensaje))
+            {
+                <div class="alert @alertClass mt-4 text-center">@mensaje</div>
+            }
+        </div>
+    </EditForm>
+}
+
+@code {
+    [Parameter] public int id { get; set; }
+
+    private OrdenReparacion? orden;
+    private string mensaje = "";
+    private string alertClass = "alert-info";
+
+    protected override async Task OnInitializedAsync()
+    {
+        orden = await context.OrdenesReparacion.FindAsync(id);
+    }
+
+    private async Task GuardarCambios()
+    {
+        try
+        {
+            context.OrdenesReparacion.Update(orden!);
+            await context.SaveChangesAsync();
+            mensaje = "✅ Estado actualizado correctamente.";
+            alertClass = "alert-success";
+            await Task.Delay(2000);
+            nav.NavigateTo("/admin/ordenes");
+        }
+        catch (Exception)
+        {
+            mensaje = "❌ Error al actualizar el estado.";
+            alertClass = "alert-danger";
+        }
+    }
+}

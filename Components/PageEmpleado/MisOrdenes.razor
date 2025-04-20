@@ -1,0 +1,97 @@
+﻿@page "/tecnico/ordenes"
+@attribute [Authorize(Roles = "Tecnico,Admin")]
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using ProyectoMejorado.Components.Models
+@using ProyectoMejorado.Data
+@inject UserManager<ApplicationUser> userManager
+@inject ApplicationDbContext context
+@inject AuthenticationStateProvider authProvider
+@rendermode InteractiveServer
+
+<h3 class="text-primary mb-4"><i class="bi bi-wrench-adjustable me-2"></i> Mis Órdenes Asignadas</h3>
+
+@if (ordenes == null)
+{
+    <p>Cargando órdenes...</p>
+}
+else if (!ordenes.Any())
+{
+    <div class="alert alert-info text-center">No tienes órdenes asignadas.</div>
+}
+else
+{
+    <table class="table table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Cliente</th>
+                <th>Equipo</th>
+                <th>Problema</th>
+                <th>Estado</th>
+                <th>Actualizar Estado</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var orden in ordenes)
+            {
+                <tr>
+                    <td>@orden.ClienteNombre</td>
+                    <td>@orden.DescripcionEquipo</td>
+                    <td>@orden.ProblemaReportado</td>
+                    <td><span class="badge bg-secondary">@orden.Estado</span></td>
+                    <td>
+                        <InputSelect class="form-select form-select-sm" @bind-Value="orden.Estado">
+                            <option>Pendiente</option>
+                            <option>En proceso</option>
+                            <option>Reparado</option>
+                            <option>Entregado</option>
+                        </InputSelect>
+                        <button class="btn btn-sm btn-primary mt-1" @onclick="() => ActualizarEstado(orden)">
+                            Guardar
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@if (!string.IsNullOrEmpty(mensaje))
+{
+    <div class="alert @claseAlerta mt-3">@mensaje</div>
+}
+
+@code {
+    private List<OrdenReparacion>? ordenes;
+    private string mensaje = string.Empty;
+    private string claseAlerta = "alert-info";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var auth = await authProvider.GetAuthenticationStateAsync();
+        var user = await userManager.GetUserAsync(auth.User);
+        if (user != null)
+        {
+            ordenes = await Task.FromResult(
+                context.OrdenesReparacion
+                .Where(o => o.TecnicoAsignadoId == user.Id)
+                .ToList());
+        }
+    }
+
+    private async Task ActualizarEstado(OrdenReparacion orden)
+    {
+        try
+        {
+            context.OrdenesReparacion.Update(orden);
+            await context.SaveChangesAsync();
+            mensaje = "✅ Estado actualizado.";
+            claseAlerta = "alert-success";
+        }
+        catch
+        {
+            mensaje = "❌ Error al actualizar.";
+            claseAlerta = "alert-danger";
+        }
+    }
+}

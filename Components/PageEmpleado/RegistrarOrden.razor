@@ -1,0 +1,83 @@
+﻿@page "/empleado/registrar-orden"
+@attribute [Authorize(Roles = "Empleado,Admin")]
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using ProyectoMejorado.Components.Models
+@using ProyectoMejorado.Data
+@inject ApplicationDbContext context
+@inject UserManager<ApplicationUser> userManager
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<h3 class="text-primary mb-4">
+    <i class="bi bi-tools me-2"></i> Registrar Orden de Reparación
+</h3>
+
+<EditForm Model="orden" OnValidSubmit="GuardarOrden" FormName="OrdenForm">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label>Nombre del Cliente</label>
+        <InputText class="form-control" @bind-Value="orden.ClienteNombre" />
+    </div>
+
+    <div class="mb-3">
+        <label>Descripción del Equipo</label>
+        <InputText class="form-control" @bind-Value="orden.DescripcionEquipo" />
+    </div>
+
+    <div class="mb-3">
+        <label>Problema Reportado</label>
+        <InputTextArea class="form-control" @bind-Value="orden.ProblemaReportado" />
+    </div>
+
+    <div class="mb-3">
+        <label>Asignar Técnico</label>
+        <InputSelect class="form-select" @bind-Value="orden.TecnicoAsignadoId">
+            <option value="">Seleccione un técnico</option>
+            @foreach (var tecnico in tecnicos)
+            {
+                <option value="@tecnico.Id">@tecnico.Email</option>
+            }
+        </InputSelect>
+    </div>
+
+    <button class="btn btn-success w-100">
+        <i class="bi bi-save me-2"></i> Guardar Orden
+    </button>
+</EditForm>
+
+@if (!string.IsNullOrEmpty(mensaje))
+{
+    <div class="alert @claseAlerta mt-3">@mensaje</div>
+}
+
+@code {
+    private OrdenReparacion orden = new();
+    private List<ApplicationUser> tecnicos = new();
+    private string mensaje = string.Empty;
+    private string claseAlerta = "alert-info";
+
+    protected override async Task OnInitializedAsync()
+    {
+        tecnicos = (await userManager.GetUsersInRoleAsync("Tecnico")).ToList();
+    }
+
+    private async Task GuardarOrden()
+    {
+        try
+        {
+            context.OrdenesReparacion.Add(orden);
+            await context.SaveChangesAsync();
+            mensaje = "✅ Orden registrada correctamente.";
+            claseAlerta = "alert-success";
+            orden = new();
+        }
+        catch
+        {
+            mensaje = "❌ Ocurrió un error al guardar.";
+            claseAlerta = "alert-danger";
+        }
+    }
+}

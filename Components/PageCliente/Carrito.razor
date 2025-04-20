@@ -1,0 +1,96 @@
+﻿@page "/carrito"
+@using ProyectoMejorado.Components.Models
+@using ProyectoMejorado.Components.Services
+@inject CarritoService carritoService
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<h3 class="text-primary mb-4"><i class="bi bi-cart me-2"></i> Carrito de Compras</h3>
+
+@if (!items.Any())
+{
+    <div class="alert alert-info text-center">Tu carrito está vacío.</div>
+}
+else
+{
+    <div class="row">
+        @foreach (var item in items)
+        {
+            <div class="col-md-6 mb-4">
+                <div class="card shadow-sm border-0 rounded-4 h-100">
+                    <div class="card-body d-flex gap-3 align-items-center">
+                        @if (!string.IsNullOrEmpty(item.ImagenUrl))
+                        {
+                            <img src="@item.ImagenUrl" class="rounded-3" style="width: 90px; height: 90px; object-fit: cover;" />
+                        }
+
+                        <div class="flex-fill">
+                            <h6 class="fw-bold mb-1">@item.Nombre</h6>
+                            <div class="mb-2 d-flex align-items-center gap-2">
+                                <button class="btn btn-sm btn-outline-secondary" @onclick="@(() => Disminuir(item.ProductoId))">
+                                    <i class="bi bi-dash"></i>
+                                </button>
+                                <span class="badge bg-primary px-3 py-1">x@item.Cantidad</span>
+                                <button class="btn btn-sm btn-outline-secondary" @onclick="@(() => Aumentar(item.ProductoId))">
+                                    <i class="bi bi-plus"></i>
+                                </button>
+                            </div>
+                            <span class="text-muted">Precio: RD$ @item.Precio</span><br />
+                            <small class="text-muted">Subtotal: RD$ @(item.Precio * item.Cantidad)</small>
+                        </div>
+
+                        <button class="btn btn-sm btn-outline-danger" @onclick="@(() => QuitarItem(item.ProductoId))">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="text-end mt-4">
+        <h5 class="fw-bold text-success">Total: RD$ @total</h5>
+        <button class="btn btn-success btn-lg mt-2" @onclick="ContinuarCompra">
+            <i class="bi bi-credit-card me-1"></i> Proceder al pago
+        </button>
+    </div>
+}
+
+@code {
+    private List<ItemCarrito> items = new();
+    private decimal total = 0;
+
+    protected override void OnInitialized()
+    {
+        CargarDatos();
+    }
+
+    private void CargarDatos()
+    {
+        items = carritoService.ObtenerItems().ToList();
+        total = carritoService.ObtenerTotal();
+    }
+
+    private void Aumentar(int id)
+    {
+        carritoService.AumentarCantidad(id);
+        CargarDatos();
+    }
+
+    private void Disminuir(int id)
+    {
+        carritoService.DisminuirCantidad(id);
+        CargarDatos();
+    }
+
+    private void QuitarItem(int id)
+    {
+        carritoService.Quitar(id);
+        CargarDatos();
+    }
+
+    private void ContinuarCompra()
+    {
+        Navigation.NavigateTo("/checkout");
+    }
+}

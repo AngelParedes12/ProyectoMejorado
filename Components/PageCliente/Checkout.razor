@@ -1,0 +1,228 @@
+﻿@page "/checkout"
+@attribute [Authorize]
+@using Microsoft.AspNetCore.Authorization
+@using ProyectoMejorado.Components.Models
+@using ProyectoMejorado.Components.Services
+@using ProyectoMejorado.Data
+@using Microsoft.AspNetCore.Identity
+@inject CarritoService carritoService
+@inject UserManager<ApplicationUser> userManager
+@inject AuthenticationStateProvider authProvider
+@inject ApplicationDbContext context
+@inject NavigationManager nav
+@rendermode InteractiveServer
+
+<h3 class="text-primary mb-4"><i class="bi bi-credit-card me-2"></i> Finalizar Compra</h3>
+
+@if (!items.Any())
+{
+    <div class="alert alert-info">Tu carrito está vacío.</div>
+}
+else
+{
+    <EditForm Model="orden" OnValidSubmit="ProcesarCompra">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <!-- Información de Envío -->
+        <div class="card shadow-sm p-4 rounded-3 mb-4">
+            <h5 class="mb-3"><i class="bi bi-geo-alt me-1"></i> Información de Envío</h5>
+
+            <div class="mb-3">
+                <label class="form-label">Dirección</label>
+                <InputTextArea class="form-control" @bind-Value="orden.DireccionEnvio" rows="3" placeholder="Ej. Calle #4, SFM" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Teléfono</label>
+                <InputText class="form-control" @bind-Value="orden.Telefono" placeholder="809-000-0000" />
+            </div>
+        </div>
+
+        <!-- Método de Pago -->
+        <div class="card shadow-sm p-4 rounded-3 mb-4">
+            <h5 class="mb-3"><i class="bi bi-wallet2 me-1"></i> Método de Pago</h5>
+
+            <div class="mb-3">
+                <label class="form-label">Selecciona un método</label>
+                <InputSelect class="form-select" @bind-Value="orden.MetodoPago">
+                    <option value="">Selecciona uno</option>
+                    <option value="Efectivo">💵 Efectivo</option>
+                    <option value="Tarjeta">💳 Tarjeta de Crédito/Débito</option>
+                    <option value="Transferencia">💲 Transferencia Bancaria</option>
+                </InputSelect>
+            </div>
+
+            @if (orden.MetodoPago == "Tarjeta")
+            {
+                <div class="mb-3">
+                    <label class="form-label">Número de Tarjeta</label>
+                    <InputText class="form-control" @bind="tarjetaNumero" placeholder="0000 0000 0000 0000" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Nombre en la Tarjeta</label>
+                    <InputText class="form-control" @bind="tarjetaNombre" placeholder="Nombre completo" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Fecha de Vencimiento</label>
+                    <InputText class="form-control" @bind="tarjetaFecha" placeholder="MM/AA" />
+                </div>
+            }
+            else if (orden.MetodoPago == "Transferencia")
+            {
+                <div class="mb-3">
+                    <label class="form-label">Número de Referencia</label>
+                    <InputText class="form-control" @bind="referenciaBancaria" placeholder="Ej. 74823391XYZ" />
+                </div>
+            }
+        </div>
+
+        <!-- Resumen del Pedido -->
+        <div class="card shadow-sm p-4 rounded-3 mb-4">
+            <h5 class="mb-3"><i class="bi bi-list-check me-1"></i> Resumen del Pedido</h5>
+            <ul class="list-group">
+                @foreach (var item in items)
+                {
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        @item.Nombre <span class="badge bg-primary">x@item.Cantidad</span>
+                        <span class="text-success">RD$ @(item.Cantidad * item.Precio)</span>
+                    </li>
+                }
+                <li class="list-group-item d-flex justify-content-between fw-bold fs-5">
+                    Total <span class="text-success">RD$ @total</span>
+                </li>
+            </ul>
+        </div>
+
+        <button class="btn btn-success btn-lg w-100 mt-2">
+            <i class="bi bi-check-circle-fill me-1"></i> Confirmar Compra
+        </button>
+    </EditForm>
+}
+
+@if (!string.IsNullOrEmpty(mensaje))
+{
+    <div class="alert @claseAlerta mt-4 text-center fw-semibold">@mensaje</div>
+}
+
+@code {
+    private List<ItemCarrito> items = new();
+    private decimal total = 0;
+    private OrdenCliente orden = new();
+    private string mensaje = "";
+    private string claseAlerta = "alert-info";
+
+    // Datos para simular tarjeta o transferencia
+    private string tarjetaNumero = "";
+    private string tarjetaNombre = "";
+    private string tarjetaFecha = "";
+    private string referenciaBancaria = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        items = carritoService.ObtenerItems().ToList();
+        total = carritoService.ObtenerTotal();
+
+        var auth = await authProvider.GetAuthenticationStateAsync();
+        var user = await userManager.GetUserAsync(auth.User);
+
+        if (user != null)
+        {
+            orden.ClienteEmail = user.Email!;
+            orden.NombreCompleto = user.NombreCompleto;
+            orden.DireccionEnvio = user.Direccion;
+            orden.Telefono = user.Telefono;
+            orden.MetodoPago = "Efectivo"; // Valor por defecto
+        }
+    }
+
+    private async Task<bool> ValidarStockDisponible()
+    {
+        foreach (var item in items)
+        {
+            var productoDb = await context.Productos.FindAsync(item.ProductoId);
+            if (productoDb == null || productoDb.CantidadDisponible < item.Cantidad)
+            {
+                mensaje = $"❌ El producto '{item.Nombre}' no tiene suficiente stock.";
+                claseAlerta = "alert-danger";
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private async Task ProcesarCompra()
+    {
+        if (!items.Any())
+        {
+            mensaje = "❌ El carrito está vacío.";
+            claseAlerta = "alert-warning";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(orden.DireccionEnvio) || string.IsNullOrWhiteSpace(orden.Telefono))
+        {
+            mensaje = "❌ Dirección y teléfono son requeridos.";
+            claseAlerta = "alert-warning";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(orden.MetodoPago))
+        {
+            mensaje = "❌ Selecciona un método de pago.";
+            claseAlerta = "alert-warning";
+            return;
+        }
+
+        if (orden.MetodoPago == "Tarjeta" && (string.IsNullOrWhiteSpace(tarjetaNumero) || string.IsNullOrWhiteSpace(tarjetaNombre)))
+        {
+            mensaje = "❌ Debes completar los datos de la tarjeta.";
+            claseAlerta = "alert-warning";
+            return;
+        }
+
+        if (orden.MetodoPago == "Transferencia" && string.IsNullOrWhiteSpace(referenciaBancaria))
+        {
+            mensaje = "❌ Ingresa el número de referencia bancaria.";
+            claseAlerta = "alert-warning";
+            return;
+        }
+
+        if (!await ValidarStockDisponible())
+            return;
+
+        try
+        {
+            foreach (var item in items)
+            {
+                var productoDb = await context.Productos.FindAsync(item.ProductoId);
+                if (productoDb != null)
+                {
+                    productoDb.CantidadDisponible -= item.Cantidad;
+                    context.Productos.Update(productoDb);
+                }
+            }
+
+            orden.Fecha = DateTime.Now;
+            orden.Total = total;
+            orden.Productos = string.Join(", ", items.Select(i => $"{i.Nombre} x{i.Cantidad}"));
+            orden.Estado = "Pendiente";
+
+            context.OrdenesClientes.Add(orden);
+            await context.SaveChangesAsync();
+
+            carritoService.Limpiar();
+
+            mensaje = "✅ Pedido realizado con éxito.";
+            claseAlerta = "alert-success";
+
+            await Task.Delay(2000);
+            nav.NavigateTo("/mis-pedidos");
+        }
+        catch
+        {
+            mensaje = "❌ Error al procesar el pedido.";
+            claseAlerta = "alert-danger";
+        }
+    }
+}

@@ -1,5 +1,8 @@
 ﻿@inherits LayoutComponentBase
 
+@inject ProyectoMejorado.Components.Services.CarritoService carritoService
+@inject NavigationManager NavigationManager
+
 <div class="page">
     <div class="sidebar">
         <NavMenu />
@@ -14,6 +17,20 @@
             @Body
         </article>
     </main>
+
+    <!-- Botón flotante del carrito -->
+    <div style="position: fixed; top: 1rem; right: 1rem; z-index: 1050;">
+        <button class="btn btn-primary position-relative" @onclick='() => NavigationManager.NavigateTo("/carrito")'>
+            <i class="bi bi-cart"></i>
+            @if (carritoService.ObtenerCantidadTotal() > 0)
+            {
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                    @carritoService.ObtenerCantidadTotal()
+                </span>
+            }
+        </button>
+
+    </div>
 </div>
 
 <div id="blazor-error-ui" data-nosnippet>
@@ -21,3 +38,28 @@
     <a href="." class="reload">Reload</a>
     <span class="dismiss">🗙</span>
 </div>
+
+@code {
+    private string? currentUrl;
+
+    protected override void OnInitialized()
+    {
+        currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        NavigationManager.LocationChanged += OnLocationChanged;
+
+        // 🔁 Escuchar los cambios del carrito
+        carritoService.OnChange += StateHasChanged;
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
+        carritoService.OnChange -= StateHasChanged;
+    }
+}

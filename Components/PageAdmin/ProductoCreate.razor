@@ -1,0 +1,87 @@
+﻿@page "/admin/productos/crear"
+@using ProyectoMejorado.Components.Models
+@using ProyectoMejorado.Components.Services
+@inject ProductoService productoService
+@inject NavigationManager navigationManager
+@inject IWebHostEnvironment env
+@rendermode InteractiveServer
+
+<h3 class="text-primary mb-4">
+    <i class="bi bi-box-seam me-2"></i> Registrar Producto
+</h3>
+
+<EditForm Model="producto" OnValidSubmit="GuardarProducto" formName="RegistraProductoForm">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label>Nombre del Producto</label>
+        <InputText class="form-control" @bind-Value="producto.Nombre" />
+    </div>
+
+    <div class="mb-3">
+        <label>Categoría</label>
+        <InputSelect class="form-select" @bind-Value="producto.Categoria">
+            <option value="">Seleccione una categoría</option>
+            <option value="Accesorios">Accesorios</option>
+            <option value="Repuestos">Repuestos</option>
+            <option value="Tecnología">Tecnología</option>
+        </InputSelect>
+    </div>
+
+    <div class="mb-3">
+        <label>Descripción</label>
+        <InputTextArea class="form-control" @bind-Value="producto.Descripcion" />
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label>Precio (RD$)</label>
+            <InputNumber class="form-control" @bind-Value="producto.Precio" step="0.01" />
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <label>Cantidad Disponible</label>
+            <InputNumber class="form-control" @bind-Value="producto.CantidadDisponible" />
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label>Imagen del producto</label>
+        <InputFile OnChange="CargarImagen" class="form-control" />
+        @if (!string.IsNullOrEmpty(producto.ImagenUrl))
+        {
+            <img src="@producto.ImagenUrl" class="img-thumbnail mt-2" style="max-height: 150px;" />
+        }
+    </div>
+
+    <button class="btn btn-success w-100">
+        <i class="bi bi-save me-2"></i> Guardar Producto
+    </button>
+</EditForm>
+
+@code {
+    private Producto producto = new();
+
+    private async Task GuardarProducto()
+    {
+        await productoService.AgregarProducto(producto);
+        navigationManager.NavigateTo("/tienda");
+    }
+
+    private async Task CargarImagen(InputFileChangeEventArgs e)
+    {
+        var archivo = e.File;
+        var extension = Path.GetExtension(archivo.Name);
+        var nuevoNombre = $"{Guid.NewGuid()}{extension}";
+        var rutaCarpeta = Path.Combine(env.WebRootPath, "img");
+
+        Directory.CreateDirectory(rutaCarpeta);
+
+        var rutaCompleta = Path.Combine(rutaCarpeta, nuevoNombre);
+        using var stream = new FileStream(rutaCompleta, FileMode.Create);
+        await archivo.OpenReadStream().CopyToAsync(stream);
+
+        producto.ImagenUrl = $"/img/{nuevoNombre}";
+    }
+}

@@ -1,0 +1,60 @@
+﻿@page "/mis-pedidos/{id:int}"
+@attribute [Authorize]
+@using Microsoft.AspNetCore.Authorization
+@using ProyectoMejorado.Data
+@using ProyectoMejorado.Components.Models
+@inject ApplicationDbContext context
+@inject NavigationManager nav
+@rendermode InteractiveServer
+
+<PageTitle>Detalle del Pedido</PageTitle>
+
+<h3 class="text-primary mb-4">📦 Detalle del Pedido</h3>
+
+@if (pedido == null)
+{
+    <div class="alert alert-warning">Pedido no encontrado.</div>
+}
+else
+{
+    <div class="card shadow-sm p-4 rounded-4">
+        <h5 class="text-primary fw-bold mb-3">Pedido del @pedido.Fecha.ToString("dd/MM/yyyy")</h5>
+        <p><strong>Cliente:</strong> @pedido.NombreCompleto (@pedido.ClienteEmail)</p>
+        <p><strong>Teléfono:</strong> @pedido.Telefono</p>
+        <p><strong>Dirección:</strong> @pedido.DireccionEnvio</p>
+        <p><strong>Productos:</strong> @pedido.Productos</p>
+        <p><strong>Total:</strong> RD$ @pedido.Total</p>
+        <p>
+            <strong>Estado:</strong>
+            <span class="badge @(pedido.Estado switch
+            {
+                "Pendiente" => "bg-warning text-dark",
+                "Procesado" => "bg-primary",
+                "Enviado" => "bg-info text-dark",
+                "Entregado" => "bg-success",
+                "Cancelado" => "bg-danger",
+                _ => "bg-secondary"
+            })">@pedido.Estado</span>
+        </p>
+        <p class="text-muted">Registrado a las @pedido.Fecha.ToShortTimeString()</p>
+
+        <button class="btn btn-outline-secondary mt-3" @onclick="Volver">
+            <i class="bi bi-arrow-left me-1"></i> Volver a la gestión
+        </button>
+    </div>
+}
+
+@code {
+    [Parameter] public int id { get; set; }
+    private OrdenCliente? pedido;
+
+    protected override async Task OnInitializedAsync()
+    {
+        pedido = await context.OrdenesClientes.FindAsync(id);
+    }
+
+    private void Volver()
+    {
+        nav.NavigateTo("/admin/pedidos");
+    }
+}
