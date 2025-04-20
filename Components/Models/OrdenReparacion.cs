@@ -22,10 +22,13 @@ namespace ProyectoMejorado.Components.Models
 
         public string? TecnicoAsignadoId { get; set; }
         public string? ComentarioTecnico { get; set; }
-        [Required]
-        public string Prioridad { get; set; } = "Media"; // Baja, Media, Alta
+        
+        [Required(ErrorMessage = "Debe seleccionar una prioridad.")]
+        public string Prioridad { get; set; } = "Media";
 
-        public DateTime? FechaEntrega { get; set; }
+        [Required]
+        public DateTime FechaEntrega { get; set; } = DateTime.Today.AddDays(3);
+
 
 
     }

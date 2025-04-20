@@ -9,49 +9,53 @@
 @inject RoleManager<IdentityRole> roleManager
 @rendermode InteractiveServer
 
-<h3 class="text-primary mb-4"><i class="bi bi-person-plus me-2"></i> Registrar Usuario</h3>
+<h3 class="text-primary mb-4 text-center">
+    <i class="bi bi-person-plus me-2"></i> Registrar Nuevo Usuario
+</h3>
 
-<EditForm Model="nuevoUsuario" OnValidSubmit="RegistrarUsuario" FormName="RegistrarEmpleadoForm">
+<EditForm Model="nuevoUsuario" OnValidSubmit="RegistrarUsuario">
     <DataAnnotationsValidator />
-    <ValidationSummary />
+    <ValidationSummary class="text-danger" />
 
-    <div class="mb-3">
-        <label class="form-label">Nombre completo</label>
-        <InputText class="form-control" @bind-Value="nuevoUsuario.Nombre" />
-        <ValidationMessage For="() => nuevoUsuario.Nombre" class="text-danger" />
+    <div class="card shadow-sm p-4 rounded-4 mx-auto" style="max-width: 500px;">
+        <div class="mb-3">
+            <label class="form-label fw-semibold">👤 Nombre completo</label>
+            <InputText class="form-control" @bind-Value="nuevoUsuario.Nombre" />
+            <ValidationMessage For="() => nuevoUsuario.Nombre" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label fw-semibold">📧 Email</label>
+            <InputText class="form-control" @bind-Value="nuevoUsuario.Email" />
+            <ValidationMessage For="() => nuevoUsuario.Email" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label fw-semibold">🔐 Contraseña</label>
+            <InputText type="password" class="form-control" @bind-Value="nuevoUsuario.Contrasena" />
+            <ValidationMessage For="() => nuevoUsuario.Contrasena" />
+        </div>
+
+        <div class="mb-4">
+            <label class="form-label fw-semibold">🛡️ Rol</label>
+            <InputSelect class="form-select" @bind-Value="nuevoUsuario.Rol">
+                <option value="">Seleccione un rol</option>
+                <option value="Empleado">Empleado</option>
+                <option value="Tecnico">Técnico</option>
+            </InputSelect>
+            <ValidationMessage For="() => nuevoUsuario.Rol" />
+        </div>
+
+        <button class="btn btn-success w-100 rounded-pill">
+            <i class="bi bi-check-circle me-2"></i> Registrar Usuario
+        </button>
+
+        @if (!string.IsNullOrEmpty(mensaje))
+        {
+            <div class="alert @claseAlerta text-center fw-semibold mt-4">@mensaje</div>
+        }
     </div>
-
-    <div class="mb-3">
-        <label class="form-label">Email</label>
-        <InputText class="form-control" @bind-Value="nuevoUsuario.Email" />
-        <ValidationMessage For="() => nuevoUsuario.Email" class="text-danger" />
-    </div>
-
-    <div class="mb-3">
-        <label class="form-label">Contraseña</label>
-        <InputText class="form-control" type="password" @bind-Value="nuevoUsuario.Contrasena" />
-        <ValidationMessage For="() => nuevoUsuario.Contrasena" class="text-danger" />
-    </div>
-
-    <div class="mb-3">
-        <label class="form-label">Rol</label>
-        <InputSelect class="form-select" @bind-Value="nuevoUsuario.Rol">
-            <option value="">Seleccione un rol</option>
-            <option value="Empleado">Empleado</option>
-            <option value="Tecnico">Técnico</option>
-        </InputSelect>
-        <ValidationMessage For="() => nuevoUsuario.Rol" class="text-danger" />
-    </div>
-
-    <button class="btn btn-success w-100">
-        <i class="bi bi-floppy me-2"></i> Registrar
-    </button>
 </EditForm>
-
-@if (!string.IsNullOrEmpty(mensaje))
-{
-    <div class="alert @claseAlerta mt-3">@mensaje</div>
-}
 
 @code {
     private NuevoUsuarioModel nuevoUsuario = new();
@@ -60,7 +64,7 @@
 
     private async Task RegistrarUsuario()
     {
-        mensaje = "Procesando...";
+        mensaje = "";
         claseAlerta = "alert-info";
 
         var usuario = new ApplicationUser
@@ -82,7 +86,7 @@
         }
         else
         {
-            mensaje = "❌ Error: " + string.Join(", ", resultado.Errors.Select(e => e.Description));
+            mensaje = "❌ " + string.Join(", ", resultado.Errors.Select(e => e.Description));
             claseAlerta = "alert-danger";
         }
     }

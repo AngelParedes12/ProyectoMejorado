@@ -12,36 +12,55 @@
 <PageTitle>Registrar Orden</PageTitle>
 
 <div class="container">
-    <div class="card shadow-lg p-4 rounded-4 mx-auto" style="max-width: 600px;">
+    <div class="card shadow-lg p-4 rounded-4 mx-auto" style="max-width: 700px;">
         <h3 class="text-primary mb-4 text-center">
             <i class="bi bi-tools me-2"></i> Nueva Orden de Reparación
         </h3>
 
-        <EditForm Model="orden" OnValidSubmit="GuardarOrden" FormName="OrdenForm">
+        <EditForm Model="orden" OnValidSubmit="GuardarOrden">
             <DataAnnotationsValidator />
             <ValidationSummary />
 
             <div class="mb-3">
-                <label class="form-label fw-semibold">👤 Nombre del Cliente</label>
-                <InputText class="form-control" @bind-Value="orden.ClienteNombre" placeholder="Ej. Juan Pérez" />
+                <label class="form-label">👤 Cliente</label>
+                <InputText class="form-control shadow-sm" @bind-Value="orden.ClienteNombre" placeholder="Ej. Juan Pérez" />
                 <ValidationMessage For="() => orden.ClienteNombre" />
             </div>
 
             <div class="mb-3">
-                <label class="form-label fw-semibold">💻 Descripción del Equipo</label>
-                <InputText class="form-control" @bind-Value="orden.DescripcionEquipo" placeholder="Ej. Laptop Dell Inspiron..." />
+                <label class="form-label">💻 Descripción del Equipo</label>
+                <InputText class="form-control shadow-sm" @bind-Value="orden.DescripcionEquipo" placeholder="Ej. Laptop Dell Inspiron..." />
                 <ValidationMessage For="() => orden.DescripcionEquipo" />
             </div>
 
             <div class="mb-3">
-                <label class="form-label fw-semibold">❗ Problema Reportado</label>
-                <InputTextArea class="form-control" @bind-Value="orden.ProblemaReportado" rows="3" placeholder="Ej. No enciende, pantalla rota..." />
+                <label class="form-label">❗ Problema Reportado</label>
+                <InputTextArea class="form-control shadow-sm" rows="3" @bind-Value="orden.ProblemaReportado" placeholder="Ej. Pantalla rota..." />
                 <ValidationMessage For="() => orden.ProblemaReportado" />
             </div>
 
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">📆 Fecha Entrega Estimada</label>
+                    <InputDate class="form-control shadow-sm" @bind-Value="orden.FechaEntrega" />
+                    <ValidationMessage For="() => orden.FechaEntrega" />
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">⚠️ Prioridad</label>
+                    <InputSelect class="form-select shadow-sm" @bind-Value="orden.Prioridad">
+                        <option value="">Seleccione</option>
+                        <option value="Baja">🟢 Baja</option>
+                        <option value="Media">🟡 Media</option>
+                        <option value="Alta">🔴 Alta</option>
+                    </InputSelect>
+                    <ValidationMessage For="() => orden.Prioridad" />
+                </div>
+            </div>
+
             <div class="mb-3">
-                <label class="form-label fw-semibold">👨‍🔧 Técnico Asignado</label>
-                <InputSelect class="form-select" @bind-Value="orden.TecnicoAsignadoId">
+                <label class="form-label">👨‍🔧 Técnico Asignado</label>
+                <InputSelect class="form-select shadow-sm" @bind-Value="orden.TecnicoAsignadoId">
                     <option value="">Seleccione un técnico</option>
                     @foreach (var tecnico in tecnicos)
                     {
@@ -51,7 +70,7 @@
                 <ValidationMessage For="() => orden.TecnicoAsignadoId" />
             </div>
 
-            <button class="btn btn-success w-100">
+            <button class="btn btn-success w-100 mt-3 shadow-sm rounded-pill">
                 <i class="bi bi-check-circle me-2"></i> Guardar Orden
             </button>
         </EditForm>
@@ -72,17 +91,27 @@
     protected override async Task OnInitializedAsync()
     {
         tecnicos = (await userManager.GetUsersInRoleAsync("Tecnico")).ToList();
+        orden.FechaEntrega = DateTime.Today.AddDays(3); // Valor por defecto
+        orden.Prioridad = "Media"; // Valor por defecto
     }
 
     private async Task GuardarOrden()
     {
         try
         {
+            orden.FechaIngreso = DateTime.Now;
+            orden.Estado = "Pendiente";
+
             context.OrdenesReparacion.Add(orden);
             await context.SaveChangesAsync();
+
             mensaje = "✅ Orden registrada correctamente.";
             claseAlerta = "alert-success";
-            orden = new();
+            orden = new()
+                {
+                    FechaEntrega = DateTime.Today.AddDays(3),
+                    Prioridad = "Media"
+                };
         }
         catch
         {

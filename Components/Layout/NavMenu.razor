@@ -1,82 +1,65 @@
 ﻿@implements IDisposable
 @inject NavigationManager NavigationManager
+@using Microsoft.AspNetCore.Components.Authorization
 
-<div class="sidebar">
-    <!-- Marca: redirige al inicio -->
-    <i class="bi bi-stars me-2"></i>
-    <span class="brand-text">TechnoServices</span>
+<div class="sidebar shadow-sm">
+    <!-- Brand animada y clickeable -->
+    <div class="brand d-flex align-items-center justify-content-center py-3 bg-primary text-white"
+         @onclick="@(() => NavigationManager.NavigateTo("/tienda"))" style="cursor: pointer;">
+        <i class="bi bi-stars me-2 fs-4 animate__animated animate__pulse animate__infinite"></i>
+        <span class="fs-5 fw-bold">TechnoServices</span>
+    </div>
 
-    <nav class="nav flex-column">
-        <!-- Tienda visible para todos -->
+    <!-- Navegación -->
+    <nav class="nav flex-column p-3" style="overflow-y: auto; max-height: calc(100vh - 70px);">
+
+        <div class="nav-section-title text-muted mt-2 mb-1">General</div>
         <NavLink class="nav-link" href="/tienda">
-            <i class="bi bi-shop-window me-2"></i> <span>Tienda</span>
+            <i class="bi bi-shop-window me-2"></i> Tienda
         </NavLink>
 
-        <!-- Panel de Control -->
-        <AuthorizeView Roles="Admin,Empleado,Tecnico" Context="panelContext">
-            <div class="nav-section">
-                <i class="bi bi-clipboard me-2"></i>Panel de Control
-            </div>
+        <AuthorizeView Roles="Admin,Empleado,Tecnico">
+            <Authorized>
+                <div class="nav-section-title text-muted mt-3 mb-1">Panel de Control</div>
+                <NavLink class="nav-link" href="/admin/dashboard"><i class="bi bi-speedometer2 me-2"></i> Dashboard</NavLink>
+                <NavLink class="nav-link" href="/admin/ordenes"><i class="bi bi-tools me-2"></i> Órdenes</NavLink>
+                <NavLink class="nav-link" href="/admin/pedidos"><i class="bi bi-truck me-2"></i> Pedidos</NavLink>
+                <NavLink class="nav-link" href="/admin/productos/crear"><i class="bi bi-plus-circle-dotted me-2"></i> Nuevo Producto</NavLink>
+                <NavLink class="nav-link" href="/admin/ajustar-stock"><i class="bi bi-boxes me-2"></i> Inventario</NavLink>
+                <NavLink class="nav-link" href="/admin/usuarios"><i class="bi bi-people-fill me-2"></i> Usuarios</NavLink>
+                <NavLink class="nav-link" href="/admin/registrar-empleado"><i class="bi bi-person-plus me-2"></i> Nuevo Usuario</NavLink>
+            </Authorized>
+        </AuthorizeView>
 
-            <NavLink class="nav-link" href="/admin/dashboard">
-                <i class="bi bi-speedometer2 me-2"></i> Dashboard
-            </NavLink>
-
-            <NavLink class="nav-link" href="/admin/ordenes">
-                <i class="bi bi-tools me-2"></i> Órdenes
-            </NavLink>
-
-            <NavLink class="nav-link" href="/admin/pedidos">
-                <i class="bi bi-truck me-2"></i> Pedidos
-            </NavLink>
-
-            <NavLink class="nav-link" href="/admin/productos/crear">
-                <i class="bi bi-plus-circle-dotted me-2"></i> Nuevo Producto
-            </NavLink>
-
-            <NavLink class="nav-link" href="/admin/ajustar-stock">
-                <i class="bi bi-boxes me-2"></i> Inventario
-            </NavLink>
-
-            <NavLink class="nav-link" href="/admin/usuarios">
-                <i class="bi bi-people-fill me-2"></i> Usuarios
-            </NavLink>
-
-            <NavLink class="nav-link" href="/admin/registrar-empleado">
-                <i class="bi bi-person-plus me-2"></i> Nuevo Usuario
-            </NavLink>
-
-            <!-- Técnico -->
-            <AuthorizeView Roles="Admin,Tecnico" Context="tecnicoContext">
+        <AuthorizeView Roles="Admin,Tecnico">
+            <Authorized>
                 <NavLink class="nav-link" href="/tecnico/ordenes">
                     <i class="bi bi-clipboard-check me-2"></i> Mis Órdenes
                 </NavLink>
-            </AuthorizeView>
+            </Authorized>
+        </AuthorizeView>
 
-            <!-- Empleado -->
-            <AuthorizeView Roles="Empleado,Admin" Context="empleadoContext">
+        <AuthorizeView Roles="Empleado,Admin">
+            <Authorized>
                 <NavLink class="nav-link" href="/empleado/registrar-orden">
                     <i class="bi bi-wrench-adjustable-circle me-2"></i> Nueva Orden
                 </NavLink>
-            </AuthorizeView>
+            </Authorized>
         </AuthorizeView>
 
-        <!-- Cuenta -->
-        <AuthorizeView Context="cuentaUsuario">
-            <Authorized>
-                <div class="nav-section">
-                    <i class="bi bi-person me-2"></i>Cuenta
-                </div>
+        <AuthorizeView>
+            <Authorized Context="user">
+                <div class="nav-section-title text-muted mt-3 mb-1">Cuenta</div>
 
                 <NavLink class="nav-link" href="Account/Manage">
-                    <i class="bi bi-person-circle me-2"></i> @cuentaUsuario.User.Identity?.Name
+                    <i class="bi bi-person-circle me-2"></i> @user.User.Identity?.Name
                 </NavLink>
 
                 <NavLink class="nav-link" href="/mis-pedidos">
                     <i class="bi bi-journal-check me-2"></i> Mis Pedidos
                 </NavLink>
 
-                <form action="Account/Logout" method="post">
+                <form method="post" action="Account/Logout" class="mt-1">
                     <AntiforgeryToken />
                     <input type="hidden" name="ReturnUrl" value="@currentUrl" />
                     <button type="submit" class="nav-link btn btn-link text-start w-100">
@@ -85,21 +68,51 @@
                 </form>
             </Authorized>
             <NotAuthorized>
-                <div class="nav-section">
-                    <i class="bi bi-lock me-2"></i>Acceso
-                </div>
-
-                <NavLink class="nav-link" href="Account/Register">
-                    <i class="bi bi-person-plus-fill me-2"></i> Registrarse
-                </NavLink>
-
-                <NavLink class="nav-link" href="Account/Login">
-                    <i class="bi bi-box-arrow-in-right me-2"></i> Iniciar Sesión
-                </NavLink>
+                <div class="nav-section-title text-muted mt-3 mb-1">Acceso</div>
+                <NavLink class="nav-link" href="Account/Register"><i class="bi bi-person-plus-fill me-2"></i> Registrarse</NavLink>
+                <NavLink class="nav-link" href="Account/Login"><i class="bi bi-box-arrow-in-right me-2"></i> Iniciar Sesión</NavLink>
             </NotAuthorized>
         </AuthorizeView>
     </nav>
 </div>
+
+<style>
+    .sidebar {
+        background-color: #f8f9fa;
+        width: 260px;
+        height: 100vh;
+        position: fixed;
+        top: 0;
+        left: 0;
+        overflow: hidden;
+        border-right: 1px solid #dee2e6;
+    }
+
+    .nav-link {
+        color: #333;
+        padding: 10px 15px;
+        border-radius: 0.5rem;
+        transition: background-color 0.2s, color 0.2s;
+    }
+
+        .nav-link:hover,
+        .nav-link.active {
+            background-color: #0d6efd;
+            color: white !important;
+        }
+
+    .nav-section-title {
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        padding-left: 15px;
+        font-weight: 600;
+    }
+
+    .brand {
+        user-select: none;
+    }
+</style>
 
 @code {
     private string? currentUrl;

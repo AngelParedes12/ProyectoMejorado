@@ -14,7 +14,7 @@ namespace ProyectoMejorado.Components.Services
         public CarritoService(ProtectedLocalStorage localStorage)
         {
             this.localStorage = localStorage;
-            _ = CargarCarrito();
+            _ = CargarCarrito(); // carga automática al iniciar
         }
 
         public IReadOnlyList<ItemCarrito> ObtenerItems() => carrito;
@@ -27,32 +27,28 @@ namespace ProyectoMejorado.Components.Services
             else
                 carrito.Add(item);
 
-            GuardarCarrito();
-            NotificarCambio();
+            _ = GuardarYNotificar();
         }
 
         public void Quitar(int productoId)
         {
             var item = carrito.FirstOrDefault(i => i.ProductoId == productoId);
             if (item != null)
+            {
                 carrito.Remove(item);
-
-            GuardarCarrito();
-            NotificarCambio();
+                _ = GuardarYNotificar();
+            }
         }
 
         public void Limpiar()
         {
             carrito.Clear();
-            GuardarCarrito();
-            NotificarCambio();
+            _ = GuardarYNotificar();
         }
 
-        public decimal ObtenerTotal() =>
-            carrito.Sum(i => i.Precio * i.Cantidad);
+        public decimal ObtenerTotal() => carrito.Sum(i => i.Precio * i.Cantidad);
 
-        public int ObtenerCantidadTotal() =>
-            carrito.Sum(i => i.Cantidad);
+        public int ObtenerCantidadTotal() => carrito.Sum(i => i.Cantidad);
 
         public void AumentarCantidad(int productoId)
         {
@@ -60,8 +56,7 @@ namespace ProyectoMejorado.Components.Services
             if (item != null)
             {
                 item.Cantidad++;
-                GuardarCarrito();
-                NotificarCambio();
+                _ = GuardarYNotificar();
             }
         }
 
@@ -71,8 +66,7 @@ namespace ProyectoMejorado.Components.Services
             if (item != null && item.Cantidad > 1)
             {
                 item.Cantidad--;
-                GuardarCarrito();
-                NotificarCambio();
+                _ = GuardarYNotificar();
             }
         }
 
@@ -82,14 +76,22 @@ namespace ProyectoMejorado.Components.Services
             if (item != null)
             {
                 carrito.Remove(item);
-                GuardarCarrito();
-                NotificarCambio();
+                _ = GuardarYNotificar();
             }
         }
 
-        private async void GuardarCarrito()
+        public async Task CargarCarritoManualmente()
+        {
+            var resultado = await localStorage.GetAsync<List<ItemCarrito>>(StorageKey);
+            if (resultado.Success && resultado.Value is not null)
+                carrito = resultado.Value;
+        }
+
+
+        private async Task GuardarYNotificar()
         {
             await localStorage.SetAsync(StorageKey, carrito);
+            NotificarCambio();
         }
 
         private async Task CargarCarrito()

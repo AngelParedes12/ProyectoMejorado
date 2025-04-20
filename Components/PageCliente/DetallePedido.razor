@@ -19,44 +19,43 @@
 }
 else
 {
-    <div class="card shadow-sm p-4 rounded-4 bg-light">
+    <div class="card shadow-lg rounded-4 p-4 bg-white border-start border-4 border-primary">
         <h5 class="text-primary fw-bold mb-4">
             <i class="bi bi-receipt-cutoff me-2"></i> Pedido del @pedido.Fecha.ToString("dd/MM/yyyy")
         </h5>
 
-        <div class="row">
+        <div class="row mb-3">
             <div class="col-md-6">
-                <p class="mb-1"><i class="bi bi-person-fill me-1"></i><strong>Cliente:</strong> @pedido.NombreCompleto</p>
-                <p class="mb-1"><i class="bi bi-envelope-fill me-1"></i><strong>Email:</strong> @pedido.ClienteEmail</p>
-                <p class="mb-1"><i class="bi bi-telephone-fill me-1"></i><strong>Teléfono:</strong> @pedido.Telefono</p>
+                <p><i class="bi bi-person-fill me-2 text-secondary"></i><strong>Cliente:</strong> @pedido.NombreCompleto</p>
+                <p><i class="bi bi-envelope-at-fill me-2 text-secondary"></i><strong>Email:</strong> @pedido.ClienteEmail</p>
+                <p><i class="bi bi-telephone-fill me-2 text-secondary"></i><strong>Teléfono:</strong> @pedido.Telefono</p>
             </div>
             <div class="col-md-6">
-                <p class="mb-1"><i class="bi bi-geo-alt-fill me-1"></i><strong>Dirección:</strong> @pedido.DireccionEnvio</p>
-                <p class="mb-1"><i class="bi bi-bag-fill me-1"></i><strong>Productos:</strong> @pedido.Productos</p>
-                <p class="mb-1"><i class="bi bi-cash me-1"></i><strong>Total:</strong> <span class="text-success fw-bold">RD$ @pedido.Total</span></p>
+                <p><i class="bi bi-geo-alt-fill me-2 text-secondary"></i><strong>Dirección:</strong> @pedido.DireccionEnvio</p>
+                <p><i class="bi bi-bag-fill me-2 text-secondary"></i><strong>Productos:</strong> @pedido.Productos</p>
+                <p>
+                    <i class="bi bi-cash-stack me-2 text-secondary"></i><strong>Total:</strong>
+                    <span class="text-success fw-bold">RD$ @pedido.Total</span>
+                </p>
             </div>
         </div>
 
-        <hr />
+        <hr class="my-3" />
 
-        <p class="mt-2">
-            <strong>Estado:</strong>
-            <span class="badge @(pedido.Estado switch
-            {
-                "Pendiente" => "bg-warning text-dark",
-                "Procesado" => "bg-primary",
-                "Enviado" => "bg-info text-dark",
-                "Entregado" => "bg-success",
-                "Cancelado" => "bg-danger",
-                _ => "bg-secondary"
-            })">@pedido.Estado</span>
+        <div class="mb-3">
+            <span class="fw-bold">Estado del Pedido:</span>
+            <span class="badge fs-6 px-3 py-2 @GetBadgeClass(pedido.Estado)">
+                @pedido.Estado
+            </span>
+        </div>
+
+        <p class="text-muted small">
+            <i class="bi bi-clock-fill me-1"></i> Registrado a las @pedido.Fecha.ToShortTimeString()
         </p>
 
-        <p class="text-muted">🕒 Registrado a las @pedido.Fecha.ToShortTimeString()</p>
-
         <div class="mt-4 text-end">
-            <button class="btn btn-outline-secondary" @onclick="Volver">
-                <i class="bi bi-arrow-left-circle me-1"></i> Volver a Mis Pedidos
+            <button class="btn btn-outline-primary rounded-pill px-4" @onclick="Volver">
+                <i class="bi bi-arrow-left-circle me-2"></i> Volver a Mis Pedidos
             </button>
         </div>
     </div>
@@ -75,4 +74,14 @@ else
     {
         nav.NavigateTo("/mis-pedidos");
     }
+
+    private string GetBadgeClass(string estado) => estado switch
+    {
+        "Pendiente" => "bg-warning text-dark",
+        "Procesado" => "bg-primary",
+        "Enviado" => "bg-info text-dark",
+        "Entregado" => "bg-success",
+        "Cancelado" => "bg-danger",
+        _ => "bg-secondary"
+    };
 }

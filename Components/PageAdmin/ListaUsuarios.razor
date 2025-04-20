@@ -5,53 +5,168 @@
 @using ProyectoMejorado.Data
 @inject UserManager<ApplicationUser> userManager
 @inject RoleManager<IdentityRole> roleManager
+@inject NavigationManager nav
 @rendermode InteractiveServer
 
-<h3 class="text-primary mb-4"><i class="bi bi-people me-2"></i> Lista de Usuarios</h3>
+<h3 class="text-primary mb-4">
+    <i class="bi bi-people-fill me-2"></i> Gestión de Usuarios
+</h3>
 
-@if (usuarios == null)
+<div class="mb-3">
+    <input class="form-control" placeholder="🔍 Buscar por nombre o email..." @oninput="e => busqueda = e.Value?.ToString() ?? string.Empty" />
+</div>
+
+@if (!string.IsNullOrEmpty(mensaje))
+{
+    <div class="alert @claseAlerta text-center fw-semibold">@mensaje</div>
+}
+
+@if (usuariosFiltrados == null)
 {
     <p>Cargando usuarios...</p>
 }
-else if (!usuarios.Any())
+else if (!usuariosFiltrados.Any())
 {
-    <div class="alert alert-warning">No hay usuarios registrados.</div>
+    <div class="alert alert-warning text-center">No se encontraron usuarios con ese criterio.</div>
 }
 else
 {
-    <table class="table table-bordered table-striped">
-        <thead class="table-dark">
+    <table class="table table-bordered table-hover shadow-sm rounded-3">
+        <thead class="table-dark text-center">
             <tr>
                 <th>Nombre</th>
                 <th>Email</th>
                 <th>Rol</th>
+                <th>Acción</th>
             </tr>
         </thead>
         <tbody>
-            @foreach (var usuario in usuarios)
+            @foreach (var usuario in usuariosFiltrados)
             {
-                <tr>
+                <tr class="align-middle">
                     <td>@usuario.NombreCompleto</td>
                     <td>@usuario.Email</td>
-                    <td>@(rolesPorUsuario.TryGetValue(usuario.Id, out var rol) ? rol : "Sin rol")</td>
+                    <td>@(rolesPorUsuario.TryGetValue(usuario.Id, out var rolEncontrado) ? rolEncontrado : "Sin rol")</td>
+                    <td class="text-center">
+                        <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmarEliminacion(usuario.Id, usuario.Email)">
+                            <i class="bi bi-trash3 me-1"></i> Eliminar
+                        </button>
+                    </td>
                 </tr>
             }
         </tbody>
     </table>
 }
 
+@if (mostrarConfirmacion)
+{
+    <div class="modal fade show d-block" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-3">
+                <div class="modal-header">
+                    <h5 class="modal-title text-danger"><i class="bi bi-exclamation-triangle me-2"></i> Confirmar Eliminación</h5>
+                    <button type="button" class="btn-close" @onclick="CancelarEliminacion"></button>
+                </div>
+                <div class="modal-body">
+                    ¿Estás seguro de que deseas eliminar al usuario <strong>@emailAEliminar</strong>?
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @onclick="CancelarEliminacion">Cancelar</button>
+                    <button class="btn btn-danger" @onclick="EliminarUsuario">Sí, Eliminar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
-    private List<ApplicationUser>? usuarios;
+    private List<ApplicationUser> usuarios = new();
+    private List<ApplicationUser> usuariosFiltrados = new();
     private Dictionary<string, string> rolesPorUsuario = new();
+    private string busqueda = "";
+    private string mensaje = "";
+    private string claseAlerta = "";
+
+    private bool mostrarConfirmacion = false;
+    private string? idUsuarioAEliminar;
+    private string? emailAEliminar;
 
     protected override async Task OnInitializedAsync()
     {
+        await CargarUsuarios();
+    }
+
+    private async Task CargarUsuarios()
+    {
         usuarios = userManager.Users.ToList();
+        usuariosFiltrados = usuarios;
 
         foreach (var user in usuarios)
         {
             var roles = await userManager.GetRolesAsync(user);
             rolesPorUsuario[user.Id] = roles.FirstOrDefault() ?? "Sin rol";
         }
+    }
+
+    private void ConfirmarEliminacion(string id, string email)
+    {
+        idUsuarioAEliminar = id;
+        emailAEliminar = email;
+        mostrarConfirmacion = true;
+    }
+
+    private void CancelarEliminacion()
+    {
+        mostrarConfirmacion = false;
+        idUsuarioAEliminar = null;
+        emailAEliminar = null;
+    }
+
+    private async Task EliminarUsuario()
+    {
+        if (idUsuarioAEliminar is not null)
+        {
+            var user = await userManager.FindByIdAsync(idUsuarioAEliminar);
+            if (user != null)
+            {
+                var resultado = await userManager.DeleteAsync(user);
+                if (resultado.Succeeded)
+                {
+                    mensaje = $"✅ Usuario '{emailAEliminar}' eliminado.";
+                    claseAlerta = "alert-success";
+                    await CargarUsuarios();
+                    FiltrarUsuarios();
+                }
+                else
+                {
+                    mensaje = "❌ No se pudo eliminar el usuario.";
+                    claseAlerta = "alert-danger";
+                }
+            }
+        }
+
+        mostrarConfirmacion = false;
+    }
+
+    private void FiltrarUsuarios()
+    {
+        if (string.IsNullOrWhiteSpace(busqueda))
+        {
+            usuariosFiltrados = usuarios;
+        }
+        else
+        {
+            var criterio = busqueda.Trim().ToLower();
+            usuariosFiltrados = usuarios
+                .Where(u =>
+                    (u.NombreCompleto?.ToLower().Contains(criterio) ?? false) ||
+                    (u.Email?.ToLower().Contains(criterio) ?? false))
+                .ToList();
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        FiltrarUsuarios();
     }
 }

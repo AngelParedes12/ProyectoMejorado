@@ -2,38 +2,39 @@
 @inject ProyectoMejorado.Components.Services.CarritoService carritoService
 @inject NavigationManager NavigationManager
 
-<div class="layout">
-    <div class="sidebar">
+<div class="layout d-flex">
+    <!-- Menú lateral fijo -->
+    <div class="sidebar-container">
         <NavMenu />
     </div>
 
-    <div class="main-content">
-        <!-- Top bar -->
-        <div class="top-bar d-flex justify-content-between align-items-center px-4">
+    <!-- Contenido principal -->
+    <div class="main-content flex-grow-1 d-flex flex-column">
+        <!-- Barra superior -->
+        <div class="top-bar d-flex justify-content-between align-items-center px-4 py-2 shadow-sm bg-white border-bottom">
             <span class="fs-6 text-muted">
                 <i class="bi bi-calendar-event me-1"></i> @DateTime.Now.ToString("dd/MM/yyyy")
             </span>
         </div>
 
-        <!-- Page content -->
-        <main class="page-body">
-            <article class="content shadow-sm rounded-4 p-4">
+        <!-- Cuerpo de la página -->
+        <main class="page-body px-3 py-4">
+            <article class="content bg-white shadow rounded-4 p-4 animate__animated animate__fadeIn">
                 @Body
             </article>
         </main>
+    </div>
 
-        <!-- Floating Cart -->
-        <div class="cart-floating">
-            <button class="btn btn-primary btn-cart position-relative" @onclick='() => NavigationManager.NavigateTo("/carrito")'>
-                <i class="bi bi-cart3 fs-5"></i>
-                @if (carritoService.ObtenerCantidadTotal() > 0)
-                {
-                    <span class="cart-badge">
-                        @carritoService.ObtenerCantidadTotal()
-                    </span>
-                }
-            </button>
-        </div>
+    <!-- Botón flotante del carrito -->
+    <div class="cart-floating">
+        <button class="btn btn-primary btn-cart position-fixed bottom-0 end-0 m-4 shadow-lg rounded-circle"
+                @onclick='() => NavigationManager.NavigateTo("/carrito")' title="Ver carrito">
+            <i class="bi bi-cart3 fs-4"></i>
+            @if (carritoService.ObtenerCantidadTotal() > 0)
+            {
+                <span class="cart-badge">@carritoService.ObtenerCantidadTotal()</span>
+            }
+        </button>
     </div>
 </div>
 
@@ -43,6 +44,55 @@
     <a href="." class="reload">Recargar</a>
     <span class="dismiss">🗙</span>
 </div>
+
+<style>
+    .layout {
+        height: 100vh;
+        overflow: hidden;
+    }
+
+    .sidebar-container {
+        width: 260px;
+        min-height: 100vh;
+        background-color: #f8f9fa;
+        border-right: 1px solid #dee2e6;
+    }
+
+    .main-content {
+        overflow-y: auto;
+        background-color: #f1f3f5;
+    }
+
+    .page-body {
+        flex-grow: 1;
+        overflow-y: auto;
+    }
+
+    .content {
+        background-color: #ffffff;
+    }
+
+    .btn-cart {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        font-size: 1.5rem;
+        position: fixed;
+        z-index: 1030;
+    }
+
+    .cart-badge {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        background: red;
+        color: white;
+        border-radius: 50%;
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+        font-weight: bold;
+    }
+</style>
 
 @code {
     private string? currentUrl;
@@ -54,7 +104,7 @@
         carritoService.OnChange += StateHasChanged;
     }
 
-    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
     {
         currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
         StateHasChanged();

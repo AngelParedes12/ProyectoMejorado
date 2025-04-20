@@ -112,9 +112,35 @@ else
     private List<Producto> productosFiltrados = new();
     private string mensaje = "";
     private string tipoAlerta = "alert-success";
-    private string busqueda = "";
-    private string categoriaSeleccionada = "";
     private List<string> categorias = new();
+
+    private string _busqueda = "";
+    private string busqueda
+    {
+        get => _busqueda;
+        set
+        {
+            if (_busqueda != value)
+            {
+                _busqueda = value;
+                FiltrarProductos();
+            }
+        }
+    }
+
+    private string _categoriaSeleccionada = "";
+    private string categoriaSeleccionada
+    {
+        get => _categoriaSeleccionada;
+        set
+        {
+            if (_categoriaSeleccionada != value)
+            {
+                _categoriaSeleccionada = value;
+                FiltrarProductos();
+            }
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -136,7 +162,6 @@ else
 
         mensaje = $"✅ '{p.Nombre}' se agregó al carrito.";
         tipoAlerta = "alert-success";
-        FiltrarProductos();
 
         _ = Task.Delay(3000).ContinueWith(_ =>
         {
@@ -149,13 +174,8 @@ else
     {
         productosFiltrados = productos
             .Where(p =>
-                (string.IsNullOrEmpty(busqueda) || p.Nombre.Contains(busqueda, StringComparison.OrdinalIgnoreCase)) &&
-                (string.IsNullOrEmpty(categoriaSeleccionada) || p.Categoria == categoriaSeleccionada))
+                (string.IsNullOrWhiteSpace(busqueda) || p.Nombre.Contains(busqueda, StringComparison.OrdinalIgnoreCase)) &&
+                (string.IsNullOrWhiteSpace(categoriaSeleccionada) || p.Categoria == categoriaSeleccionada))
             .ToList();
-    }
-
-    protected override void OnParametersSet()
-    {
-        FiltrarProductos();
     }
 }

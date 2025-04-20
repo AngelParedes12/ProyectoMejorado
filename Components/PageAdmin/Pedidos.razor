@@ -34,14 +34,15 @@ else if (!pedidos.Any())
 else
 {
     <div class="table-responsive">
-        <table class="table table-bordered shadow-sm align-middle table-hover rounded-4 overflow-hidden">
+        <table class="table table-hover table-bordered align-middle shadow-sm rounded-4 overflow-hidden">
             <thead class="table-primary text-center">
                 <tr>
                     <th>📅 Fecha</th>
                     <th>👤 Cliente</th>
-                    <th>🛒 Productos</th>
+                    <th>🛍 Productos</th>
                     <th>💰 Total</th>
                     <th>🚚 Estado</th>
+                    <th>🔧 Cambiar Estado</th>
                     <th>🔍 Acción</th>
                 </tr>
             </thead>
@@ -49,24 +50,31 @@ else
                 @foreach (var pedido in pedidos.OrderByDescending(p => p.Fecha))
                 {
                     <tr>
-                        <td>@pedido.Fecha.ToString("dd/MM/yyyy")</td>
+                        <td class="text-center">@pedido.Fecha.ToString("dd/MM/yyyy")</td>
                         <td>@pedido.ClienteEmail</td>
-                        <td>@pedido.Productos</td>
-                        <td><span class="fw-semibold text-success">RD$ @pedido.Total</span></td>
+                        <td class="small">@pedido.Productos</td>
+                        <td class="text-end fw-bold text-success">RD$ @pedido.Total</td>
                         <td class="text-center">
-                            <InputSelect class="form-select form-select-sm border-primary" style="min-width: 120px;"
+                            <span class="badge @GetBadgeColor(pedido.Estado)">
+                                @pedido.Estado
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <InputSelect class="form-select form-select-sm text-center border-primary"
+                                         style="min-width: 130px;"
                                          @bind-Value="pedido.Estado"
                                          @onchange="async (_) => await CambiarEstado(pedido.Id, pedido.Estado)">
-                                <option value="Pendiente">Pendiente</option>
-                                <option value="Procesado">Procesado</option>
-                                <option value="Enviado">Enviado</option>
-                                <option value="Entregado">Entregado</option>
-                                <option value="Cancelado">Cancelado</option>
+                                <option value="Pendiente">🕒 Pendiente</option>
+                                <option value="Procesado">🔄 Procesado</option>
+                                <option value="Enviado">🚚 Enviado</option>
+                                <option value="Entregado">📦 Entregado</option>
+                                <option value="Cancelado">❌ Cancelado</option>
                             </InputSelect>
                         </td>
                         <td class="text-center">
-                            <button class="btn btn-sm btn-outline-secondary" @onclick="@(() => nav.NavigateTo($"/mis-pedidos/{pedido.Id}"))">
-                                <i class="bi bi-eye"></i> Detalle
+                            <button class="btn btn-outline-secondary btn-sm rounded-pill px-3" title="Ver detalle"
+                                    @onclick="@(() => nav.NavigateTo($"/mis-pedidos/{pedido.Id}"))">
+                                <i class="bi bi-eye-fill me-1"></i> Detalle
                             </button>
                         </td>
                     </tr>
@@ -119,5 +127,18 @@ else
         await Task.Delay(2500);
         mensaje = "";
         await InvokeAsync(StateHasChanged);
+    }
+
+    private string GetBadgeColor(string estado)
+    {
+        return estado switch
+        {
+            "Pendiente" => "bg-secondary",
+            "Procesado" => "bg-warning text-dark",
+            "Enviado" => "bg-info text-dark",
+            "Entregado" => "bg-success",
+            "Cancelado" => "bg-danger",
+            _ => "bg-light text-dark"
+        };
     }
 }
