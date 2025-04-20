@@ -95,7 +95,9 @@ else
                 @foreach (var item in items)
                 {
                     <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <span class="fw-semibold">@item.Nombre <span class="badge bg-primary ms-2">x@item.Cantidad</span></span>
+                        <span class="fw-semibold">
+                            @item.Nombre <span class="badge bg-primary ms-2">@($"x{item.Cantidad}")</span>
+                        </span>
                         <span class="text-success fw-bold">RD$ @(item.Cantidad * item.Precio)</span>
                     </li>
                 }
@@ -164,9 +166,9 @@ else
 
     private async Task ProcesarCompra()
     {
-        if (!items.Any())
+        if (!items.Any() || total <= 0)
         {
-            mensaje = "❌ El carrito está vacío.";
+            mensaje = "❌ Debe haber al menos un producto en la orden y el total debe ser mayor que 0.";
             claseAlerta = "alert-warning";
             return;
         }

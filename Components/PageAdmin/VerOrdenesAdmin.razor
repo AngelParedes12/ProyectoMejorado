@@ -12,8 +12,9 @@
     <i class="bi bi-list-check me-2"></i> Órdenes de Reparación
 </h3>
 
+<!-- Filtros -->
 <div class="row mb-4">
-    <div class="col-md-4">
+    <div class="col-md-3">
         <label>Técnico</label>
         <InputSelect class="form-select" @bind-Value="tecnicoFiltro">
             <option value="">Todos</option>
@@ -23,7 +24,8 @@
             }
         </InputSelect>
     </div>
-    <div class="col-md-4">
+
+    <div class="col-md-3">
         <label>Estado</label>
         <InputSelect class="form-select" @bind-Value="estadoFiltro">
             <option value="">Todos</option>
@@ -33,9 +35,25 @@
             <option value="Entregado">Entregado</option>
         </InputSelect>
     </div>
-    <div class="col-md-4 d-flex align-items-end">
+
+    <div class="col-md-3">
+        <label>Ordenar por Prioridad</label>
+        <InputSelect class="form-select" @bind-Value="ordenPrioridad">
+            <option value="">Sin orden</option>
+            <option value="Alta">Alta</option>
+            <option value="Media">Media</option>
+            <option value="Baja">Baja</option>
+        </InputSelect>
+    </div>
+
+    <div class="col-md-3">
+        <label>Búsqueda</label>
+        <InputText class="form-control" @bind-Value="busqueda" placeholder="Buscar cliente o equipo..." />
+    </div>
+
+    <div class="col-12 mt-3">
         <button class="btn btn-primary w-100" @onclick="FiltrarOrdenes">
-            <i class="bi bi-funnel me-2"></i> Filtrar
+            <i class="bi bi-funnel me-2"></i> Aplicar Filtros
         </button>
     </div>
 </div>
@@ -51,15 +69,16 @@ else if (!ordenesFiltradas.Any())
 else
 {
     <table class="table table-bordered table-striped">
-        <thead class="table-dark">
+        <thead class="table-dark text-center">
             <tr>
                 <th>Cliente</th>
                 <th>Equipo</th>
                 <th>Problema</th>
                 <th>Fecha</th>
+                <th>Prioridad</th>
                 <th>Estado</th>
                 <th>Técnico</th>
-                <th>Acción</th>
+                <th>Acciones</th>
             </tr>
         </thead>
         <tbody>
@@ -71,12 +90,30 @@ else
                     <td>@orden.DescripcionEquipo</td>
                     <td>@orden.ProblemaReportado</td>
                     <td>@orden.FechaIngreso.ToString("dd/MM/yyyy")</td>
-                    <td><span class="badge bg-secondary">@orden.Estado</span></td>
-                    <td>@tecnico?.Email</td>
                     <td>
+                        <span class="badge
+                            @(orden.Prioridad == "Alta" ? "bg-danger" :
+                              orden.Prioridad == "Media" ? "bg-warning text-dark" : "bg-secondary")">
+                            @orden.Prioridad
+                        </span>
+                    </td>
+                    <td>
+                        <InputSelect class="form-select form-select-sm" @bind-Value="orden.Estado" @onchange="async _ => await CambiarEstado(orden)">
+                            <option value="Pendiente">Pendiente</option>
+                            <option value="En proceso">En proceso</option>
+                            <option value="Reparado">Reparado</option>
+                            <option value="Entregado">Entregado</option>
+                        </InputSelect>
+                    </td>
+                    <td>@tecnico?.Email</td>
+                    <td class="d-flex gap-2">
                         <NavLink class="btn btn-sm btn-outline-primary" href="@($"/admin/ordenes/editar/{orden.Id}")">
-                            <i class="bi bi-pencil-square"></i> Editar
+                            <i class="bi bi-pencil-square"></i>
                         </NavLink>
+
+                        <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmarEliminar(orden)">
+                            <i class="bi bi-trash"></i>
+                        </button>
                     </td>
                 </tr>
             }
@@ -84,12 +121,48 @@ else
     </table>
 }
 
+<!-- Modal de eliminación -->
+@if (mostrarModal)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.4);">
+        <div class="modal-dialog">
+            <div class="modal-content shadow-lg rounded-4">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title"><i class="bi bi-exclamation-triangle me-2"></i> Confirmar Eliminación</h5>
+                    <button type="button" class="btn-close" @onclick="CerrarModal"></button>
+                </div>
+                <div class="modal-body">
+                    ¿Estás seguro que deseas eliminar la orden de <strong>@ordenSeleccionada?.ClienteNombre</strong>?
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @onclick="CerrarModal">Cancelar</button>
+                    <button class="btn btn-danger" @onclick="EliminarOrden"><i class="bi bi-trash"></i> Eliminar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(mensaje))
+{
+    <div class="alert @tipoAlerta mt-3 text-center">@mensaje</div>
+}
+
 @code {
     private List<OrdenReparacion>? todasLasOrdenes;
     private List<OrdenReparacion> ordenesFiltradas = new();
     private List<ApplicationUser> tecnicos = new();
+
     private string tecnicoFiltro = "";
     private string estadoFiltro = "";
+    private string ordenPrioridad = "";
+    private string busqueda = "";
+
+    private string mensaje = "";
+    private string tipoAlerta = "alert-info";
+
+    private bool mostrarModal = false;
+    private OrdenReparacion? ordenSeleccionada;
 
     protected override async Task OnInitializedAsync()
     {
@@ -100,10 +173,67 @@ else
 
     private void FiltrarOrdenes()
     {
-        ordenesFiltradas = todasLasOrdenes!
+        var resultado = todasLasOrdenes!
             .Where(o =>
                 (string.IsNullOrEmpty(tecnicoFiltro) || o.TecnicoAsignadoId == tecnicoFiltro) &&
-                (string.IsNullOrEmpty(estadoFiltro) || o.Estado == estadoFiltro))
+                (string.IsNullOrEmpty(estadoFiltro) || o.Estado == estadoFiltro) &&
+                (string.IsNullOrEmpty(busqueda) ||
+                    o.ClienteNombre.Contains(busqueda, StringComparison.OrdinalIgnoreCase) ||
+                    o.DescripcionEquipo.Contains(busqueda, StringComparison.OrdinalIgnoreCase)))
             .ToList();
+
+        if (!string.IsNullOrEmpty(ordenPrioridad))
+        {
+            resultado = resultado.OrderBy(o =>
+                o.Prioridad == "Alta" ? 0 :
+                o.Prioridad == "Media" ? 1 : 2).ToList();
+        }
+
+        ordenesFiltradas = resultado;
+    }
+
+    private async Task CambiarEstado(OrdenReparacion orden)
+    {
+        try
+        {
+            context.OrdenesReparacion.Update(orden);
+            await context.SaveChangesAsync();
+            mensaje = $"✅ Estado actualizado a '{orden.Estado}' correctamente.";
+            tipoAlerta = "alert-success";
+        }
+        catch
+        {
+            mensaje = $"❌ Error al actualizar el estado de la orden.";
+            tipoAlerta = "alert-danger";
+        }
+    }
+
+    private void ConfirmarEliminar(OrdenReparacion orden)
+    {
+        ordenSeleccionada = orden;
+        mostrarModal = true;
+    }
+
+    private void CerrarModal()
+    {
+        ordenSeleccionada = null;
+        mostrarModal = false;
+    }
+
+    private async Task EliminarOrden()
+    {
+        if (ordenSeleccionada != null)
+        {
+            context.OrdenesReparacion.Remove(ordenSeleccionada);
+            await context.SaveChangesAsync();
+            mensaje = "✅ Orden eliminada correctamente.";
+            tipoAlerta = "alert-success";
+
+            todasLasOrdenes!.Remove(ordenSeleccionada);
+            FiltrarOrdenes();
+
+            mostrarModal = false;
+            ordenSeleccionada = null;
+        }
     }
 }

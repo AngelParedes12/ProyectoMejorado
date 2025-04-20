@@ -13,10 +13,19 @@ namespace ProyectoMejorado.Components.Services
             _context = context;
         }
 
+        // ✅ Para la tienda (sólo productos con stock)
         public async Task<List<Producto>> ObtenerProductos()
         {
             return await _context.Productos
-                .Where(p => p.CantidadDisponible > 0) 
+                .Where(p => p.CantidadDisponible > 0)
+                .OrderByDescending(p => p.Id)
+                .ToListAsync();
+        }
+
+        // ✅ Nuevo: para el panel de inventario (incluye todos)
+        public async Task<List<Producto>> ObtenerTodos()
+        {
+            return await _context.Productos
                 .OrderByDescending(p => p.Id)
                 .ToListAsync();
         }

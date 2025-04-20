@@ -22,6 +22,11 @@ namespace ProyectoMejorado.Components.Models
 
         public string? TecnicoAsignadoId { get; set; }
         public string? ComentarioTecnico { get; set; }
+        [Required]
+        public string Prioridad { get; set; } = "Media"; // Baja, Media, Alta
+
+        public DateTime? FechaEntrega { get; set; }
+
 
     }
 }

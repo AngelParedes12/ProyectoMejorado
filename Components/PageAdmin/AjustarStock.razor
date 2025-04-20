@@ -7,7 +7,7 @@
 @rendermode InteractiveServer
 
 <h3 class="text-primary mb-4">
-    <i class="bi bi-boxes me-2"></i> Ajustar Stock de Productos
+    <i class="bi bi-boxes me-2"></i> Inventario y Ajustes
 </h3>
 
 @if (!string.IsNullOrEmpty(mensaje))
@@ -25,27 +25,63 @@ else if (!productos.Any())
 }
 else
 {
-    <table class="table table-striped table-bordered">
-        <thead class="table-dark text-center">
+    <table class="table table-hover table-bordered align-middle text-center">
+        <thead class="table-dark">
             <tr>
                 <th>Producto</th>
-                <th>Stock Actual</th>
-                <th>Sumar Stock</th>
-                <th>Acción</th>
+                <th>Stock</th>
+                <th>Sumar</th>
+                <th>Restar</th>
+                <th>Precio (RD$)</th>
+                <th>Imagen</th>
+                <th>Acciones</th>
             </tr>
         </thead>
         <tbody>
             @foreach (var p in productos)
             {
-                <tr class="align-middle">
-                    <td>@p.Nombre</td>
-                    <td class="text-center">@p.CantidadDisponible</td>
-                    <td style="width: 150px;">
-                        <InputNumber class="form-control text-center" @bind-Value="p.StockExtra" Min="1" />
+                <tr>
+                    <td class="text-start">@p.Nombre</td>
+                    <td>@p.CantidadDisponible</td>
+
+                    <!-- Sumar -->
+                    <td style="width: 130px;">
+                        <div class="input-group">
+                            <InputNumber class="form-control" @bind-Value="p.StockExtra" Min="1" />
+                            <button class="btn btn-success" title="Sumar" @onclick="() => ModificarStock(p, true)">
+                                <i class="bi bi-plus-circle"></i>
+                            </button>
+                        </div>
                     </td>
+
+                    <!-- Restar -->
+                    <td style="width: 130px;">
+                        <div class="input-group">
+                            <InputNumber class="form-control" @bind-Value="p.StockExtra" Min="1" />
+                            <button class="btn btn-warning" title="Restar" @onclick="() => ModificarStock(p, false)">
+                                <i class="bi bi-dash-circle"></i>
+                            </button>
+                        </div>
+                    </td>
+
+                    <!-- Precio -->
                     <td>
-                        <button class="btn btn-sm btn-success" @onclick="() => AumentarStock(p)">
-                            <i class="bi bi-plus-circle me-1"></i> Aumentar
+                        <InputNumber class="form-control text-end" @bind-Value="p.Precio" @onchange="() => GuardarPrecio(p)" />
+                    </td>
+
+                    <!-- Imagen -->
+                    <td>
+                        @if (!string.IsNullOrWhiteSpace(p.ImagenUrl))
+                        {
+                            <img src="@p.ImagenUrl" alt="img" width="50" height="50" style="object-fit:cover;" class="rounded border" />
+                        }
+                        <InputText class="form-control mt-1" @bind-Value="p.ImagenUrl" @onchange="() => GuardarImagen(p)" />
+                    </td>
+
+                    <!-- Eliminar -->
+                    <td>
+                        <button class="btn btn-danger btn-sm" @onclick="() => MostrarModal(p)">
+                            <i class="bi bi-trash3-fill"></i> Eliminar
                         </button>
                     </td>
                 </tr>
@@ -54,44 +90,109 @@ else
     </table>
 }
 
+<!-- MODAL DE CONFIRMACIÓN -->
+@if (productoAEliminar != null)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" role="dialog">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content shadow rounded-4">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title"><i class="bi bi-exclamation-triangle-fill me-2"></i> Confirmar eliminación</h5>
+                    <button type="button" class="btn-close" @onclick="CancelarEliminacion"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <p>¿Estás seguro de que deseas eliminar el producto <strong>@productoAEliminar.Nombre</strong>?</p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @onclick="CancelarEliminacion">Cancelar</button>
+                    <button class="btn btn-danger" @onclick="ConfirmarEliminacion">Eliminar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     private List<Producto>? productos;
     private string mensaje = "";
     private string claseAlerta = "alert-info";
 
+    private Producto? productoAEliminar;
+
     protected override async Task OnInitializedAsync()
     {
-        productos = await productoService.ObtenerProductos();
-        foreach (var p in productos)
-        {
-            p.StockExtra = 1; // Valor inicial
-        }
+        await ActualizarLista();
     }
 
-    private async Task AumentarStock(Producto producto)
+    private async Task ModificarStock(Producto producto, bool sumar)
     {
         if (producto.StockExtra < 1)
         {
-            mensaje = "❌ Debe ingresar una cantidad mayor a cero.";
+            mensaje = "❌ Ingrese una cantidad válida.";
             claseAlerta = "alert-warning";
             return;
         }
 
-        try
+        if (!sumar && producto.StockExtra > producto.CantidadDisponible)
         {
-            producto.CantidadDisponible += producto.StockExtra;
-            await productoService.ActualizarProducto(producto);
+            mensaje = $"❌ No puede reducir más del stock actual de '{producto.Nombre}'.";
+            claseAlerta = "alert-danger";
+            return;
+        }
 
-            mensaje = $"✅ Stock actualizado correctamente para '{producto.Nombre}'.";
+        producto.CantidadDisponible += sumar ? producto.StockExtra : -producto.StockExtra;
+        await productoService.ActualizarProducto(producto);
+
+        mensaje = $"✅ Stock {(sumar ? "aumentado" : "reducido")} correctamente para '{producto.Nombre}'.";
+        claseAlerta = "alert-success";
+        await ActualizarLista();
+    }
+
+    private async Task GuardarPrecio(Producto producto)
+    {
+        await productoService.ActualizarProducto(producto);
+        mensaje = $"💰 Precio actualizado para '{producto.Nombre}'.";
+        claseAlerta = "alert-info";
+        await ActualizarLista();
+    }
+
+    private async Task GuardarImagen(Producto producto)
+    {
+        await productoService.ActualizarProducto(producto);
+        mensaje = $"🖼️ Imagen actualizada para '{producto.Nombre}'.";
+        claseAlerta = "alert-info";
+        await ActualizarLista();
+    }
+
+    private void MostrarModal(Producto producto)
+    {
+        productoAEliminar = producto;
+    }
+
+    private void CancelarEliminacion()
+    {
+        productoAEliminar = null;
+    }
+
+    private async Task ConfirmarEliminacion()
+    {
+        if (productoAEliminar is not null)
+        {
+            await productoService.EliminarProducto(productoAEliminar.Id);
+            mensaje = $"🗑️ Producto '{productoAEliminar.Nombre}' eliminado.";
             claseAlerta = "alert-success";
         }
-        catch (Exception ex)
-        {
-            mensaje = "❌ Error al actualizar el stock. " + ex.Message;
-            claseAlerta = "alert-danger";
-        }
 
-        await Task.Delay(2500);
+        productoAEliminar = null;
+        await ActualizarLista();
+    }
+
+    private async Task ActualizarLista()
+    {
+        productos = await productoService.ObtenerTodos();
+        productos.ForEach(p => p.StockExtra = 1);
+        StateHasChanged();
+        await Task.Delay(3000);
         mensaje = "";
         await InvokeAsync(StateHasChanged);
     }

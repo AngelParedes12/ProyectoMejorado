@@ -27,14 +27,12 @@ namespace ProyectoMejorado.Components.Models
         [Required]
         public DateTime Fecha { get; set; } = DateTime.Now;
 
-        [Range(1, double.MaxValue, ErrorMessage = "El total debe ser mayor que 0.")]
         public decimal Total { get; set; }
 
         [Required(ErrorMessage = "Debes seleccionar un método de pago.")]
         [RegularExpression("Efectivo|Tarjeta|Transferencia", ErrorMessage = "El método de pago no es válido.")]
         public string MetodoPago { get; set; } = "Efectivo";
 
-        [Required(ErrorMessage = "Debe haber al menos un producto en la orden.")]
         public string Productos { get; set; } = "";
 
         [Required]

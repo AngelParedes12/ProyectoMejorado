@@ -15,11 +15,13 @@
         {
             if (await userManager.IsInRoleAsync(user, "Admin"))
             {
-                Navigation.NavigateTo("/admin/dashboard", true);
+                await Task.Yield(); // 👉 Esto permite que la navegación no se dispare prematuramente
+                Navigation.NavigateTo("/admin/dashboard");
                 return;
             }
         }
 
-        Navigation.NavigateTo("/tienda", true);
+        await Task.Yield(); // 👉 Para evitar error de navegación prematura
+        Navigation.NavigateTo("/tienda");
     }
 }
