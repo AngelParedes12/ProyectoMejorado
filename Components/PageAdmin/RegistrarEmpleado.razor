@@ -11,32 +11,36 @@
 
 <h3 class="text-primary mb-4"><i class="bi bi-person-plus me-2"></i> Registrar Usuario</h3>
 
-<EditForm Model="nuevoUsuario" OnValidSubmit="RegistrarUsuario" formName="RegistrarEmpleadoForm">
+<EditForm Model="nuevoUsuario" OnValidSubmit="RegistrarUsuario" FormName="RegistrarEmpleadoForm">
     <DataAnnotationsValidator />
     <ValidationSummary />
 
     <div class="mb-3">
-        <label>Nombre completo</label>
+        <label class="form-label">Nombre completo</label>
         <InputText class="form-control" @bind-Value="nuevoUsuario.Nombre" />
+        <ValidationMessage For="() => nuevoUsuario.Nombre" class="text-danger" />
     </div>
 
     <div class="mb-3">
-        <label>Email</label>
+        <label class="form-label">Email</label>
         <InputText class="form-control" @bind-Value="nuevoUsuario.Email" />
+        <ValidationMessage For="() => nuevoUsuario.Email" class="text-danger" />
     </div>
 
     <div class="mb-3">
-        <label>Contraseña</label>
+        <label class="form-label">Contraseña</label>
         <InputText class="form-control" type="password" @bind-Value="nuevoUsuario.Contrasena" />
+        <ValidationMessage For="() => nuevoUsuario.Contrasena" class="text-danger" />
     </div>
 
     <div class="mb-3">
-        <label>Rol</label>
+        <label class="form-label">Rol</label>
         <InputSelect class="form-select" @bind-Value="nuevoUsuario.Rol">
             <option value="">Seleccione un rol</option>
             <option value="Empleado">Empleado</option>
             <option value="Tecnico">Técnico</option>
         </InputSelect>
+        <ValidationMessage For="() => nuevoUsuario.Rol" class="text-danger" />
     </div>
 
     <button class="btn btn-success w-100">

@@ -12,11 +12,17 @@
 @inject NavigationManager nav
 @rendermode InteractiveServer
 
-<h3 class="text-primary mb-4"><i class="bi bi-credit-card me-2"></i> Finalizar Compra</h3>
+<PageTitle>Checkout</PageTitle>
+
+<h3 class="text-primary mb-4 text-center">
+    <i class="bi bi-credit-card-fill me-2"></i> Finalizar Compra
+</h3>
 
 @if (!items.Any())
 {
-    <div class="alert alert-info">Tu carrito está vacío.</div>
+    <div class="alert alert-info text-center shadow-sm rounded-3">
+        <i class="bi bi-info-circle-fill me-2"></i> Tu carrito está vacío.
+    </div>
 }
 else
 {
@@ -25,27 +31,28 @@ else
         <ValidationSummary />
 
         <!-- Información de Envío -->
-        <div class="card shadow-sm p-4 rounded-3 mb-4">
-            <h5 class="mb-3"><i class="bi bi-geo-alt me-1"></i> Información de Envío</h5>
-
+        <div class="card shadow-sm rounded-4 p-4 mb-4 border-start border-4 border-primary">
+            <h5 class="mb-3 text-primary">
+                <i class="bi bi-geo-alt-fill me-2"></i> Información de Envío
+            </h5>
             <div class="mb-3">
                 <label class="form-label">Dirección</label>
-                <InputTextArea class="form-control" @bind-Value="orden.DireccionEnvio" rows="3" placeholder="Ej. Calle #4, SFM" />
+                <InputTextArea class="form-control shadow-sm" @bind-Value="orden.DireccionEnvio" rows="3" placeholder="Ej. Calle #4, SFM" />
             </div>
-
             <div class="mb-3">
                 <label class="form-label">Teléfono</label>
-                <InputText class="form-control" @bind-Value="orden.Telefono" placeholder="809-000-0000" />
+                <InputText class="form-control shadow-sm" @bind-Value="orden.Telefono" placeholder="809-000-0000" />
             </div>
         </div>
 
         <!-- Método de Pago -->
-        <div class="card shadow-sm p-4 rounded-3 mb-4">
-            <h5 class="mb-3"><i class="bi bi-wallet2 me-1"></i> Método de Pago</h5>
-
+        <div class="card shadow-sm rounded-4 p-4 mb-4 border-start border-4 border-success">
+            <h5 class="mb-3 text-success">
+                <i class="bi bi-wallet-fill me-2"></i> Método de Pago
+            </h5>
             <div class="mb-3">
                 <label class="form-label">Selecciona un método</label>
-                <InputSelect class="form-select" @bind-Value="orden.MetodoPago">
+                <InputSelect class="form-select shadow-sm" @bind-Value="orden.MetodoPago">
                     <option value="">Selecciona uno</option>
                     <option value="Efectivo">💵 Efectivo</option>
                     <option value="Tarjeta">💳 Tarjeta de Crédito/Débito</option>
@@ -55,54 +62,59 @@ else
 
             @if (orden.MetodoPago == "Tarjeta")
             {
-                <div class="mb-3">
-                    <label class="form-label">Número de Tarjeta</label>
-                    <InputText class="form-control" @bind="tarjetaNumero" placeholder="0000 0000 0000 0000" />
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Nombre en la Tarjeta</label>
-                    <InputText class="form-control" @bind="tarjetaNombre" placeholder="Nombre completo" />
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Fecha de Vencimiento</label>
-                    <InputText class="form-control" @bind="tarjetaFecha" placeholder="MM/AA" />
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Número de Tarjeta</label>
+                        <InputText class="form-control shadow-sm" @bind="tarjetaNumero" placeholder="0000 0000 0000 0000" />
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Nombre en la Tarjeta</label>
+                        <InputText class="form-control shadow-sm" @bind="tarjetaNombre" placeholder="Nombre completo" />
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Fecha de Vencimiento</label>
+                        <InputText class="form-control shadow-sm" @bind="tarjetaFecha" placeholder="MM/AA" />
+                    </div>
                 </div>
             }
             else if (orden.MetodoPago == "Transferencia")
             {
                 <div class="mb-3">
                     <label class="form-label">Número de Referencia</label>
-                    <InputText class="form-control" @bind="referenciaBancaria" placeholder="Ej. 74823391XYZ" />
+                    <InputText class="form-control shadow-sm" @bind="referenciaBancaria" placeholder="Ej. 74823391XYZ" />
                 </div>
             }
         </div>
 
         <!-- Resumen del Pedido -->
-        <div class="card shadow-sm p-4 rounded-3 mb-4">
-            <h5 class="mb-3"><i class="bi bi-list-check me-1"></i> Resumen del Pedido</h5>
-            <ul class="list-group">
+        <div class="card shadow-sm rounded-4 p-4 mb-4 border-start border-4 border-warning">
+            <h5 class="mb-3 text-warning">
+                <i class="bi bi-bag-check-fill me-2"></i> Resumen del Pedido
+            </h5>
+            <ul class="list-group list-group-flush">
                 @foreach (var item in items)
                 {
                     <li class="list-group-item d-flex justify-content-between align-items-center">
-                        @item.Nombre <span class="badge bg-primary">x@item.Cantidad</span>
-                        <span class="text-success">RD$ @(item.Cantidad * item.Precio)</span>
+                        <span class="fw-semibold">@item.Nombre <span class="badge bg-primary ms-2">x@item.Cantidad</span></span>
+                        <span class="text-success fw-bold">RD$ @(item.Cantidad * item.Precio)</span>
                     </li>
                 }
                 <li class="list-group-item d-flex justify-content-between fw-bold fs-5">
-                    Total <span class="text-success">RD$ @total</span>
+                    Total:
+                    <span class="text-success">RD$ @total</span>
                 </li>
             </ul>
         </div>
 
-        <button class="btn btn-success btn-lg w-100 mt-2">
-            <i class="bi bi-check-circle-fill me-1"></i> Confirmar Compra
+        <button class="btn btn-success btn-lg w-100 rounded-pill shadow-sm">
+            <i class="bi bi-check-circle-fill me-2"></i> Confirmar Compra
         </button>
     </EditForm>
 }
 
 @if (!string.IsNullOrEmpty(mensaje))
 {
-    <div class="alert @claseAlerta mt-4 text-center fw-semibold">@mensaje</div>
+    <div class="alert @claseAlerta mt-4 text-center fw-semibold shadow-sm">@mensaje</div>
 }
 
 @code {
@@ -112,7 +124,6 @@ else
     private string mensaje = "";
     private string claseAlerta = "alert-info";
 
-    // Datos para simular tarjeta o transferencia
     private string tarjetaNumero = "";
     private string tarjetaNombre = "";
     private string tarjetaFecha = "";
@@ -132,7 +143,7 @@ else
             orden.NombreCompleto = user.NombreCompleto;
             orden.DireccionEnvio = user.Direccion;
             orden.Telefono = user.Telefono;
-            orden.MetodoPago = "Efectivo"; // Valor por defecto
+            orden.MetodoPago = "Efectivo";
         }
     }
 
@@ -174,7 +185,8 @@ else
             return;
         }
 
-        if (orden.MetodoPago == "Tarjeta" && (string.IsNullOrWhiteSpace(tarjetaNumero) || string.IsNullOrWhiteSpace(tarjetaNombre)))
+        if (orden.MetodoPago == "Tarjeta" &&
+            (string.IsNullOrWhiteSpace(tarjetaNumero) || string.IsNullOrWhiteSpace(tarjetaNombre)))
         {
             mensaje = "❌ Debes completar los datos de la tarjeta.";
             claseAlerta = "alert-warning";
@@ -188,8 +200,7 @@ else
             return;
         }
 
-        if (!await ValidarStockDisponible())
-            return;
+        if (!await ValidarStockDisponible()) return;
 
         try
         {

@@ -9,49 +9,59 @@
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
 
-<h3 class="text-primary mb-4">
-    <i class="bi bi-tools me-2"></i> Registrar Orden de Reparación
-</h3>
+<PageTitle>Registrar Orden</PageTitle>
 
-<EditForm Model="orden" OnValidSubmit="GuardarOrden" FormName="OrdenForm">
-    <DataAnnotationsValidator />
-    <ValidationSummary />
+<div class="container">
+    <div class="card shadow-lg p-4 rounded-4 mx-auto" style="max-width: 600px;">
+        <h3 class="text-primary mb-4 text-center">
+            <i class="bi bi-tools me-2"></i> Nueva Orden de Reparación
+        </h3>
 
-    <div class="mb-3">
-        <label>Nombre del Cliente</label>
-        <InputText class="form-control" @bind-Value="orden.ClienteNombre" />
+        <EditForm Model="orden" OnValidSubmit="GuardarOrden" FormName="OrdenForm">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">👤 Nombre del Cliente</label>
+                <InputText class="form-control" @bind-Value="orden.ClienteNombre" placeholder="Ej. Juan Pérez" />
+                <ValidationMessage For="() => orden.ClienteNombre" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">💻 Descripción del Equipo</label>
+                <InputText class="form-control" @bind-Value="orden.DescripcionEquipo" placeholder="Ej. Laptop Dell Inspiron..." />
+                <ValidationMessage For="() => orden.DescripcionEquipo" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">❗ Problema Reportado</label>
+                <InputTextArea class="form-control" @bind-Value="orden.ProblemaReportado" rows="3" placeholder="Ej. No enciende, pantalla rota..." />
+                <ValidationMessage For="() => orden.ProblemaReportado" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">👨‍🔧 Técnico Asignado</label>
+                <InputSelect class="form-select" @bind-Value="orden.TecnicoAsignadoId">
+                    <option value="">Seleccione un técnico</option>
+                    @foreach (var tecnico in tecnicos)
+                    {
+                        <option value="@tecnico.Id">@tecnico.Email</option>
+                    }
+                </InputSelect>
+                <ValidationMessage For="() => orden.TecnicoAsignadoId" />
+            </div>
+
+            <button class="btn btn-success w-100">
+                <i class="bi bi-check-circle me-2"></i> Guardar Orden
+            </button>
+        </EditForm>
+
+        @if (!string.IsNullOrEmpty(mensaje))
+        {
+            <div class="alert @claseAlerta mt-4 text-center">@mensaje</div>
+        }
     </div>
-
-    <div class="mb-3">
-        <label>Descripción del Equipo</label>
-        <InputText class="form-control" @bind-Value="orden.DescripcionEquipo" />
-    </div>
-
-    <div class="mb-3">
-        <label>Problema Reportado</label>
-        <InputTextArea class="form-control" @bind-Value="orden.ProblemaReportado" />
-    </div>
-
-    <div class="mb-3">
-        <label>Asignar Técnico</label>
-        <InputSelect class="form-select" @bind-Value="orden.TecnicoAsignadoId">
-            <option value="">Seleccione un técnico</option>
-            @foreach (var tecnico in tecnicos)
-            {
-                <option value="@tecnico.Id">@tecnico.Email</option>
-            }
-        </InputSelect>
-    </div>
-
-    <button class="btn btn-success w-100">
-        <i class="bi bi-save me-2"></i> Guardar Orden
-    </button>
-</EditForm>
-
-@if (!string.IsNullOrEmpty(mensaje))
-{
-    <div class="alert @claseAlerta mt-3">@mensaje</div>
-}
+</div>
 
 @code {
     private OrdenReparacion orden = new();

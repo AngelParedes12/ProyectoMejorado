@@ -1,9 +1,25 @@
 ﻿@page "/"
+@using Microsoft.AspNetCore.Identity
+@using ProyectoMejorado.Data
 @inject NavigationManager Navigation
+@inject AuthenticationStateProvider authProvider
+@inject UserManager<ApplicationUser> userManager
 
 @code {
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
+        var auth = await authProvider.GetAuthenticationStateAsync();
+        var user = await userManager.GetUserAsync(auth.User);
+
+        if (user != null)
+        {
+            if (await userManager.IsInRoleAsync(user, "Admin"))
+            {
+                Navigation.NavigateTo("/admin/dashboard", true);
+                return;
+            }
+        }
+
         Navigation.NavigateTo("/tienda", true);
     }
 }

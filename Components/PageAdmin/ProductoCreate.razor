@@ -17,6 +17,7 @@
     <div class="mb-3">
         <label>Nombre del Producto</label>
         <InputText class="form-control" @bind-Value="producto.Nombre" />
+        <ValidationMessage For="@(() => producto.Nombre)" />
     </div>
 
     <div class="mb-3">
@@ -27,22 +28,26 @@
             <option value="Repuestos">Repuestos</option>
             <option value="Tecnología">Tecnología</option>
         </InputSelect>
+        <ValidationMessage For="@(() => producto.Categoria)" />
     </div>
 
     <div class="mb-3">
         <label>Descripción</label>
         <InputTextArea class="form-control" @bind-Value="producto.Descripcion" />
+        <ValidationMessage For="@(() => producto.Descripcion)" />
     </div>
 
     <div class="row">
         <div class="col-md-6 mb-3">
             <label>Precio (RD$)</label>
             <InputNumber class="form-control" @bind-Value="producto.Precio" step="0.01" />
+            <ValidationMessage For="@(() => producto.Precio)" />
         </div>
 
         <div class="col-md-6 mb-3">
             <label>Cantidad Disponible</label>
             <InputNumber class="form-control" @bind-Value="producto.CantidadDisponible" />
+            <ValidationMessage For="@(() => producto.CantidadDisponible)" />
         </div>
     </div>
 

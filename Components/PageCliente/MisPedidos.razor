@@ -12,7 +12,9 @@
 
 <PageTitle>Mis Pedidos</PageTitle>
 
-<h3 class="text-primary mb-4"><i class="bi bi-card-checklist me-2"></i> Mis Pedidos</h3>
+<h3 class="text-primary mb-4 text-center">
+    <i class="bi bi-card-checklist me-2"></i> Mis Pedidos
+</h3>
 
 @if (isLoading)
 {
@@ -32,14 +34,15 @@ else
         @foreach (var pedido in pedidos.OrderByDescending(p => p.Fecha))
         {
             <div class="col-md-6 col-lg-4 mb-4">
-                <div class="card shadow-sm border-0 h-100 rounded-4">
-                    <div class="card-body d-flex flex-column">
+                <div class="card shadow-sm border-0 h-100 rounded-4 bg-light">
+                    <div class="card-body d-flex flex-column justify-content-between">
                         <h6 class="fw-bold text-primary mb-2">
                             🧾 Pedido del @pedido.Fecha.ToString("dd/MM/yyyy")
                         </h6>
-                        <p class="mb-1"><strong>Productos:</strong> @pedido.Productos</p>
-                        <p class="mb-1"><strong>Dirección:</strong> @pedido.DireccionEnvio</p>
-                        <p class="mb-1"><strong>Método de Pago:</strong> @pedido.MetodoPago</p>
+                        <p class="mb-1"><i class="bi bi-box-seam me-1"></i><strong>Productos:</strong> @pedido.Productos</p>
+                        <p class="mb-1"><i class="bi bi-geo-alt-fill me-1"></i><strong>Dirección:</strong> @pedido.DireccionEnvio</p>
+                        <p class="mb-1"><i class="bi bi-wallet2 me-1"></i><strong>Pago:</strong> @pedido.MetodoPago</p>
+
                         <p>
                             <strong>Estado:</strong>
                             <span class="badge @(pedido.Estado switch
@@ -53,19 +56,19 @@ else
                             })">@pedido.Estado</span>
                         </p>
 
-                        <div class="mt-auto d-flex justify-content-between align-items-center">
+                        <div class="mt-2 d-flex justify-content-between align-items-center">
                             <span class="badge bg-success fs-6">RD$ @pedido.Total</span>
-                            <span class="text-muted small">@pedido.Fecha.ToShortTimeString()</span>
+                            <small class="text-muted">@pedido.Fecha.ToShortTimeString()</small>
                         </div>
 
                         <NavLink class="btn btn-sm btn-outline-primary mt-3" href="@($"/mis-pedidos/{pedido.Id}")">
-                            <i class="bi bi-eye"></i> Ver Detalle
+                            <i class="bi bi-eye me-1"></i> Ver Detalle
                         </NavLink>
 
                         @if (pedido.Estado == "Pendiente")
                         {
                             <button class="btn btn-sm btn-outline-danger mt-2" @onclick="() => ConfirmarCancelacion(pedido.Id)">
-                                <i class="bi bi-x-circle"></i> Cancelar Pedido
+                                <i class="bi bi-x-circle me-1"></i> Cancelar Pedido
                             </button>
                         }
                     </div>
@@ -81,7 +84,9 @@ else
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content rounded-3 shadow">
                 <div class="modal-header">
-                    <h5 class="modal-title text-danger">Confirmar Cancelación</h5>
+                    <h5 class="modal-title text-danger">
+                        <i class="bi bi-exclamation-triangle me-2"></i> Confirmar Cancelación
+                    </h5>
                     <button type="button" class="btn-close" @onclick="CerrarModal"></button>
                 </div>
                 <div class="modal-body">
@@ -99,7 +104,6 @@ else
 @code {
     private List<OrdenCliente> pedidos = new();
     private bool isLoading = true;
-
     private bool mostrarConfirmacion = false;
     private int idParaCancelar;
 

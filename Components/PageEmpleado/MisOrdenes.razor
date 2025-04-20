@@ -9,57 +9,76 @@
 @inject AuthenticationStateProvider authProvider
 @rendermode InteractiveServer
 
-<h3 class="text-primary mb-4"><i class="bi bi-wrench-adjustable me-2"></i> Mis Órdenes Asignadas</h3>
+<PageTitle>Órdenes Asignadas</PageTitle>
 
-@if (ordenes == null)
-{
-    <p>Cargando órdenes...</p>
-}
-else if (!ordenes.Any())
-{
-    <div class="alert alert-info text-center">No tienes órdenes asignadas.</div>
-}
-else
-{
-    <table class="table table-hover">
-        <thead class="table-dark">
-            <tr>
-                <th>Cliente</th>
-                <th>Equipo</th>
-                <th>Problema</th>
-                <th>Estado</th>
-                <th>Actualizar Estado</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var orden in ordenes)
-            {
-                <tr>
-                    <td>@orden.ClienteNombre</td>
-                    <td>@orden.DescripcionEquipo</td>
-                    <td>@orden.ProblemaReportado</td>
-                    <td><span class="badge bg-secondary">@orden.Estado</span></td>
-                    <td>
-                        <InputSelect class="form-select form-select-sm" @bind-Value="orden.Estado">
-                            <option>Pendiente</option>
-                            <option>En proceso</option>
-                            <option>Reparado</option>
-                            <option>Entregado</option>
-                        </InputSelect>
-                        <button class="btn btn-sm btn-primary mt-1" @onclick="() => ActualizarEstado(orden)">
-                            Guardar
-                        </button>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
-}
+<div class="container">
+    <div class="card shadow-lg rounded-4 p-4">
+        <h3 class="text-primary mb-4 text-center">
+            <i class="bi bi-wrench-adjustable me-2"></i> Órdenes Asignadas
+        </h3>
 
-@if (!string.IsNullOrEmpty(mensaje))
-{
-    <div class="alert @claseAlerta mt-3">@mensaje</div>
-}
+        @if (ordenes == null)
+        {
+            <div class="text-center">Cargando órdenes...</div>
+        }
+        else if (!ordenes.Any())
+        {
+            <div class="alert alert-info text-center">No tienes órdenes asignadas.</div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped align-middle text-center">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Cliente</th>
+                            <th>Equipo</th>
+                            <th>Problema</th>
+                            <th>Estado</th>
+                            <th>Actualizar Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var orden in ordenes)
+                        {
+                            <tr>
+                                <td>@orden.ClienteNombre</td>
+                                <td>@orden.DescripcionEquipo</td>
+                                <td>@orden.ProblemaReportado</td>
+                                <td>
+                                    <span class="badge @(orden.Estado switch
+                                    {
+                                        "Pendiente" => "bg-warning text-dark",
+                                        "En proceso" => "bg-primary",
+                                        "Reparado" => "bg-info text-dark",
+                                        "Entregado" => "bg-success",
+                                        _ => "bg-secondary"
+                                    })">@orden.Estado</span>
+                                </td>
+                                <td>
+                                    <InputSelect class="form-select form-select-sm mb-2" @bind-Value="orden.Estado">
+                                        <option>Pendiente</option>
+                                        <option>En proceso</option>
+                                        <option>Reparado</option>
+                                        <option>Entregado</option>
+                                    </InputSelect>
+                                    <button class="btn btn-sm btn-outline-primary w-100" @onclick="() => ActualizarEstado(orden)">
+                                        <i class="bi bi-check-circle me-1"></i> Guardar
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+
+        @if (!string.IsNullOrEmpty(mensaje))
+        {
+            <div class="alert @claseAlerta mt-4 text-center fw-semibold">@mensaje</div>
+        }
+    </div>
+</div>
 
 @code {
     private List<OrdenReparacion>? ordenes;
@@ -70,6 +89,7 @@ else
     {
         var auth = await authProvider.GetAuthenticationStateAsync();
         var user = await userManager.GetUserAsync(auth.User);
+
         if (user != null)
         {
             ordenes = await Task.FromResult(
@@ -85,12 +105,12 @@ else
         {
             context.OrdenesReparacion.Update(orden);
             await context.SaveChangesAsync();
-            mensaje = "✅ Estado actualizado.";
+            mensaje = "✅ Estado actualizado correctamente.";
             claseAlerta = "alert-success";
         }
         catch
         {
-            mensaje = "❌ Error al actualizar.";
+            mensaje = "❌ Error al actualizar el estado.";
             claseAlerta = "alert-danger";
         }
     }

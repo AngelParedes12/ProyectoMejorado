@@ -5,53 +5,70 @@
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
 
-<h3 class="text-primary mb-4"><i class="bi bi-cart me-2"></i> Carrito de Compras</h3>
+<PageTitle>Carrito</PageTitle>
+
+<h3 class="text-primary mb-4 text-center">
+    <i class="bi bi-cart4 me-2"></i> Carrito de Compras
+</h3>
 
 @if (!items.Any())
 {
-    <div class="alert alert-info text-center">Tu carrito está vacío.</div>
+    <div class="alert alert-info text-center">
+        <i class="bi bi-info-circle-fill me-2"></i> Tu carrito está vacío.
+    </div>
 }
 else
 {
-    <div class="row">
+    <div class="row g-4">
         @foreach (var item in items)
         {
-            <div class="col-md-6 mb-4">
+            <div class="col-12 col-md-6 col-lg-4">
                 <div class="card shadow-sm border-0 rounded-4 h-100">
-                    <div class="card-body d-flex gap-3 align-items-center">
-                        @if (!string.IsNullOrEmpty(item.ImagenUrl))
-                        {
-                            <img src="@item.ImagenUrl" class="rounded-3" style="width: 90px; height: 90px; object-fit: cover;" />
-                        }
+                    <div class="card-body d-flex flex-column gap-3">
+                        <div class="d-flex gap-3 align-items-center">
+                            @if (!string.IsNullOrEmpty(item.ImagenUrl))
+                            {
+                                <img src="@item.ImagenUrl" class="rounded-3 border" style="width: 80px; height: 80px; object-fit: cover;" />
+                            }
 
-                        <div class="flex-fill">
-                            <h6 class="fw-bold mb-1">@item.Nombre</h6>
-                            <div class="mb-2 d-flex align-items-center gap-2">
-                                <button class="btn btn-sm btn-outline-secondary" @onclick="@(() => Disminuir(item.ProductoId))">
-                                    <i class="bi bi-dash"></i>
-                                </button>
-                                <span class="badge bg-primary px-3 py-1">x@item.Cantidad</span>
-                                <button class="btn btn-sm btn-outline-secondary" @onclick="@(() => Aumentar(item.ProductoId))">
-                                    <i class="bi bi-plus"></i>
-                                </button>
+                            <div class="flex-fill">
+                                <h6 class="fw-bold mb-1">@item.Nombre</h6>
+                                <p class="text-muted mb-0 small">Precio: <strong>RD$ @item.Precio</strong></p>
+                                <p class="text-muted small">Subtotal: <strong>RD$ @(item.Precio * item.Cantidad)</strong></p>
                             </div>
-                            <span class="text-muted">Precio: RD$ @item.Precio</span><br />
-                            <small class="text-muted">Subtotal: RD$ @(item.Precio * item.Cantidad)</small>
                         </div>
 
-                        <button class="btn btn-sm btn-outline-danger" @onclick="@(() => QuitarItem(item.ProductoId))">
-                            <i class="bi bi-trash"></i>
-                        </button>
+                        <div class="d-flex justify-content-between align-items-center mt-2">
+                            <div class="btn-group" role="group">
+                                <button class="btn btn-outline-secondary" title="Disminuir" @onclick="@(() => Disminuir(item.ProductoId))">
+                                    <i class="bi bi-dash-lg"></i>
+                                </button>
+
+                                <button class="btn btn-outline-primary" disabled style="min-width: 50px;">
+                                    @item.Cantidad
+                                </button>
+
+                                <button class="btn btn-outline-secondary" title="Aumentar" @onclick="@(() => Aumentar(item.ProductoId))">
+                                    <i class="bi bi-plus-lg"></i>
+                                </button>
+                            </div>
+
+                            <button class="btn btn-outline-danger rounded-circle ms-2" title="Eliminar" @onclick="@(() => QuitarItem(item.ProductoId))" style="width: 36px; height: 36px;">
+                                <i class="bi bi-trash3-fill"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
         }
     </div>
 
-    <div class="text-end mt-4">
-        <h5 class="fw-bold text-success">Total: RD$ @total</h5>
-        <button class="btn btn-success btn-lg mt-2" @onclick="ContinuarCompra">
-            <i class="bi bi-credit-card me-1"></i> Proceder al pago
+    <div class="mt-5 d-flex justify-content-between align-items-center flex-wrap border-top pt-4">
+        <h5 class="fw-bold text-success mb-3 mb-md-0">
+            <i class="bi bi-cash-stack me-1"></i> Total: RD$ @total
+        </h5>
+        <button class="btn btn-success btn-lg rounded-pill px-4" @onclick="ContinuarCompra">
+            <i class="bi bi-credit-card me-2"></i> Proceder al Pago
         </button>
     </div>
 }

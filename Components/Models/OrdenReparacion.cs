@@ -21,5 +21,7 @@ namespace ProyectoMejorado.Components.Models
         public string Estado { get; set; } = "Pendiente";
 
         public string? TecnicoAsignadoId { get; set; }
+        public string? ComentarioTecnico { get; set; }
+
     }
 }

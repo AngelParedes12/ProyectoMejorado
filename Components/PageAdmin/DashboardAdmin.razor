@@ -1,114 +1,172 @@
 ﻿@page "/admin/dashboard"
 @attribute [Authorize(Roles = "Admin")]
 @using Microsoft.AspNetCore.Authorization
-@using ProyectoMejorado.Components.Models
+@using Microsoft.AspNetCore.Identity
 @using ProyectoMejorado.Data
-@using Microsoft.EntityFrameworkCore
+@using ProyectoMejorado.Components.Models
 @inject ApplicationDbContext context
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider authProvider
+@inject UserManager<ApplicationUser> userManager
 @rendermode InteractiveServer
 
-<PageTitle>Dashboard</PageTitle>
+<PageTitle>Dashboard Administrador</PageTitle>
 
-<h3 class="text-primary mb-4"><i class="bi bi-bar-chart me-2"></i> Panel de Administración</h3>
-
-<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-    <div class="bg-white shadow rounded-2xl p-4">
-        <h6 class="text-gray-600">Total Órdenes</h6>
-        <p class="text-2xl font-bold text-blue-600">@dashboard.TotalOrdenes</p>
+@if (isLoading)
+{
+    <div class="text-center mt-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Cargando...</span>
+        </div>
     </div>
-    <div class="bg-white shadow rounded-2xl p-4">
-        <h6 class="text-gray-600">Órdenes Pendientes</h6>
-        <p class="text-2xl font-bold text-orange-500">@dashboard.OrdenesPorEstado.GetValueOrDefault("Pendiente")</p>
-    </div>
-    <div class="bg-white shadow rounded-2xl p-4">
-        <h6 class="text-gray-600">Órdenes Entregadas</h6>
-        <p class="text-2xl font-bold text-green-600">@dashboard.OrdenesPorEstado.GetValueOrDefault("Entregado")</p>
-    </div>
-    <div class="bg-white shadow rounded-2xl p-4">
-        <h6 class="text-gray-600">Total Clientes</h6>
-        <p class="text-2xl font-bold text-purple-600">@dashboard.TotalClientes</p>
-    </div>
-</div>
-
-<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-    <div class="bg-white p-4 rounded-2xl shadow">
-        <h6 class="font-semibold mb-2">Órdenes por Estado</h6>
-        <BarChart width="450" height="300" data="@dashboard.OrdenesPorEstado.Select(e => new { Estado = e.Key, Cantidad = e.Value })">
-            <XAxis dataKey="Estado" />
-            <YAxis />
-            <Tooltip />
-            <Bar dataKey="Cantidad" />
-        </BarChart>
+}
+else
+{
+    <div class="mb-4 bg-white shadow-sm rounded-4 p-4 d-flex justify-content-between align-items-center">
+        <div>
+            <h3 class="mb-2"><span class="wave">👋</span> ¡Bienvenido, <span class="text-primary">@usuarioEmail</span>!</h3>
+            <p class="text-muted mb-0">Este es tu panel de administración.</p>
+        </div>
+        <div class="fs-5 text-muted">@DateTime.Now.ToString("dd/MM/yyyy")</div>
     </div>
 
-    <div class="bg-white p-4 rounded-2xl shadow">
-        <h6 class="font-semibold mb-2">Top Ventas por Producto</h6>
-        <PieChart width="400" height="300">
-            <Pie data="@dashboard.VentasPorProducto.Select(p => new { Producto = p.Key, Total = p.Value })"
-                 dataKey="Total" nameKey="Producto" cx="50%" cy="50%" outerRadius="100" />
-            <Tooltip />
-        </PieChart>
+    <div class="row g-4 mb-4">
+        <div class="col-md-6 col-lg-3">
+            <div class="card card-hover border-0 shadow-lg rounded-4 animate-fade-in"
+                 @onclick='() => NavigationManager.NavigateTo("/admin/ajustar-stock")' style="cursor:pointer;">
+                <div class="card-body text-center">
+                    <i class="bi bi-box-seam display-4 text-primary"></i>
+                    <h5 class="mt-3">Productos</h5>
+                    <p class="fw-bold fs-4">@totalProductos</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+            <div class="card card-hover border-0 shadow-lg rounded-4 animate-fade-in delay-1"
+                 @onclick='() => NavigationManager.NavigateTo("/admin/pedidos")' style="cursor:pointer;">
+                <div class="card-body text-center">
+                    <i class="bi bi-receipt-cutoff display-4 text-success"></i>
+                    <h5 class="mt-3">Pedidos</h5>
+                    <p class="fw-bold fs-4">@totalPedidos</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+            <div class="card card-hover border-0 shadow-lg rounded-4 animate-fade-in delay-2"
+                 @onclick='() => NavigationManager.NavigateTo("/admin/ordenes")' style="cursor:pointer;">
+                <div class="card-body text-center">
+                    <i class="bi bi-tools display-4 text-warning"></i>
+                    <h5 class="mt-3">Órdenes Reparación</h5>
+                    <p class="fw-bold fs-4">@totalOrdenes</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+            <div class="card card-hover border-0 shadow-lg rounded-4 animate-fade-in delay-3"
+                 @onclick='() => NavigationManager.NavigateTo("/admin/usuarios")' style="cursor:pointer;">
+                <div class="card-body text-center">
+                    <i class="bi bi-people-fill display-4 text-danger"></i>
+                    <h5 class="mt-3">Usuarios</h5>
+                    <p class="fw-bold fs-4">@totalUsuarios</p>
+                </div>
+            </div>
+        </div>
     </div>
-</div>
 
-<div class="bg-white p-4 rounded-2xl shadow mb-5">
-    <h6 class="font-semibold mb-2">Pedidos por Mes</h6>
-    <BarChart width="800" height="300" data="@dashboard.PedidosPorMes.Select(p => new { Mes = p.Key, Cantidad = p.Value })">
-        <XAxis dataKey="Mes" />
-        <YAxis />
-        <Tooltip />
-        <Bar dataKey="Cantidad" />
-    </BarChart>
-</div>
+    <div class="row g-4">
+        <div class="col-md-6">
+            <div class="card border-0 shadow rounded-4 bg-light p-4">
+                <h5 class="text-warning fw-bold mb-3">Producto con menor stock</h5>
+                @if (productoMenorStock != null)
+                {
+                    <p class="mb-0">
+                        <strong>
+                            <a href="/admin/ajustar-stock" class="text-decoration-none text-dark fw-semibold">
+                                @productoMenorStock.Nombre
+                            </a>
+                        </strong> —
+                        <span class="badge bg-warning text-dark">@productoMenorStock.CantidadDisponible unidades</span>
+                    </p>
+                }
+                else
+                {
+                    <p class="text-muted">No hay productos disponibles.</p>
+                }
+            </div>
+        </div>
 
-<div class="bg-white p-4 rounded-2xl shadow mb-5">
-    <h6 class="font-semibold mb-2">📦 Productos con Bajo Stock (≤ 5 unidades)</h6>
-    @if (dashboard.ProductosBajoStock.Any())
-    {
-        <BarChart width="800" height="300" data="@dashboard.ProductosBajoStock.Select(p => new { Producto = p.Key, Stock = p.Value })">
-            <XAxis dataKey="Producto" />
-            <YAxis />
-            <Tooltip />
-            <Bar dataKey="Stock" />
-        </BarChart>
-    }
-    else
-    {
-        <div class="alert alert-success">🎉 Todos los productos tienen suficiente stock.</div>
-    }
-</div>
+        <div class="col-md-6">
+            <div class="card border-0 shadow rounded-4 bg-light p-4">
+                <h5 class="text-success fw-bold mb-3">Producto más vendido</h5>
+                @if (productoMasVendidoNombre != null)
+                {
+                    <p class="mb-0">
+                        <strong>@productoMasVendidoNombre</strong> —
+                        <span class="badge bg-success">@productoMasVendidoCantidad unidades</span>
+                    </p>
+                }
+                else
+                {
+                    <p class="text-muted">No hay ventas registradas.</p>
+                }
+            </div>
+        </div>
+    </div>
+}
 
 @code {
-    private DashboardInfo dashboard = new();
+    private int totalProductos;
+    private int totalPedidos;
+    private int totalOrdenes;
+    private int totalUsuarios;
+    private bool isLoading = true;
+    private string usuarioEmail = "";
+
+    private Producto? productoMenorStock;
+    private string? productoMasVendidoNombre;
+    private int productoMasVendidoCantidad;
 
     protected override async Task OnInitializedAsync()
     {
-        dashboard.TotalOrdenes = await context.OrdenesReparacion.CountAsync();
-        dashboard.TotalClientes = await context.Users.CountAsync();
-        dashboard.TotalPedidos = await context.OrdenesClientes.CountAsync();
-        dashboard.TotalProductos = await context.Productos.CountAsync();
+        var auth = await authProvider.GetAuthenticationStateAsync();
+        var user = await userManager.GetUserAsync(auth.User);
+        usuarioEmail = user?.Email ?? "Administrador";
 
-        dashboard.OrdenesPorEstado = await context.OrdenesReparacion
-            .GroupBy(o => o.Estado)
-            .Select(g => new { Estado = g.Key, Cantidad = g.Count() })
-            .ToDictionaryAsync(g => g.Estado, g => g.Cantidad);
+        totalProductos = context.Productos.Count();
+        totalPedidos = context.OrdenesClientes.Count();
+        totalOrdenes = context.OrdenesReparacion.Count();
+        totalUsuarios = context.Users.Count();
 
-        dashboard.VentasPorProducto = await context.OrdenesClientes
-            .GroupBy(o => o.Productos)
-            .Select(g => new { Producto = g.Key, Total = g.Count() })
-            .OrderByDescending(g => g.Total)
-            .Take(5)
-            .ToDictionaryAsync(g => g.Producto, g => g.Total);
-
-        dashboard.PedidosPorMes = await context.OrdenesClientes
-            .GroupBy(o => o.Fecha.Month)
-            .Select(g => new { Mes = new DateTime(2025, g.Key, 1).ToString("MMM"), Cantidad = g.Count() })
-            .ToDictionaryAsync(g => g.Mes, g => g.Cantidad);
-
-        dashboard.ProductosBajoStock = await context.Productos
-            .Where(p => p.CantidadDisponible <= 5)
+        productoMenorStock = context.Productos
             .OrderBy(p => p.CantidadDisponible)
-            .Select(p => new { p.Nombre, p.CantidadDisponible })
-            .ToDictionaryAsync(p => p.Nombre, p => p.CantidadDisponible);
+            .FirstOrDefault();
+
+        var productosVendidos = context.OrdenesClientes
+            .AsEnumerable()
+            .SelectMany(o => o.Productos.Split(",", StringSplitOptions.RemoveEmptyEntries))
+            .Select(p =>
+            {
+                var partes = p.Trim().Split(" x");
+                return new
+                {
+                    Nombre = partes[0],
+                    Cantidad = partes.Length == 2 && int.TryParse(partes[1], out var q) ? q : 0
+                };
+            })
+            .GroupBy(x => x.Nombre)
+            .Select(g => new { Nombre = g.Key, Total = g.Sum(x => x.Cantidad) })
+            .OrderByDescending(x => x.Total)
+            .FirstOrDefault();
+
+        if (productosVendidos != null)
+        {
+            productoMasVendidoNombre = productosVendidos.Nombre;
+            productoMasVendidoCantidad = productosVendidos.Total;
+        }
+
+        isLoading = false;
     }
 }

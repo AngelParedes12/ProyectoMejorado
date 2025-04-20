@@ -10,8 +10,8 @@
 
 <PageTitle>Gestión de Pedidos</PageTitle>
 
-<h3 class="text-primary mb-4">
-    <i class="bi bi-receipt me-2"></i> Gestión de Pedidos
+<h3 class="text-primary mb-4 text-center">
+    <i class="bi bi-receipt-cutoff me-2"></i> Gestión de Pedidos
 </h3>
 
 @if (!string.IsNullOrEmpty(mensaje))
@@ -21,7 +21,7 @@
 
 @if (isLoading)
 {
-    <div class="text-center">
+    <div class="text-center my-5">
         <div class="spinner-border text-primary" role="status">
             <span class="visually-hidden">Cargando...</span>
         </div>
@@ -29,47 +29,51 @@
 }
 else if (!pedidos.Any())
 {
-    <div class="alert alert-info text-center">No hay pedidos registrados.</div>
+    <div class="alert alert-info text-center">📦 No hay pedidos registrados aún.</div>
 }
 else
 {
-    <table class="table table-striped table-hover table-bordered">
-        <thead class="table-dark text-center">
-            <tr>
-                <th>Fecha</th>
-                <th>Cliente</th>
-                <th>Productos</th>
-                <th>Total</th>
-                <th>Estado</th>
-                <th>Acción</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var pedido in pedidos.OrderByDescending(p => p.Fecha))
-            {
-                <tr class="align-middle">
-                    <td>@pedido.Fecha.ToString("dd/MM/yyyy")</td>
-                    <td>@pedido.ClienteEmail</td>
-                    <td>@pedido.Productos</td>
-                    <td>RD$ @pedido.Total</td>
-                    <td class="text-center">
-                        <InputSelect class="form-select form-select-sm" @bind-Value="pedido.Estado" @onchange="async (_) => await CambiarEstado(pedido.Id, pedido.Estado)">
-                            <option value="Pendiente">Pendiente</option>
-                            <option value="Procesado">Procesado</option>
-                            <option value="Enviado">Enviado</option>
-                            <option value="Entregado">Entregado</option>
-                            <option value="Cancelado">Cancelado</option>
-                        </InputSelect>
-                    </td>
-                    <td class="text-center">
-                        <button class="btn btn-sm btn-outline-secondary" @onclick="@(() => nav.NavigateTo("/mis-pedidos/" + pedido.Id))">
-                            <i class="bi bi-eye"></i> Ver Detalle
-                        </button>
-                    </td>
+    <div class="table-responsive">
+        <table class="table table-bordered shadow-sm align-middle table-hover rounded-4 overflow-hidden">
+            <thead class="table-primary text-center">
+                <tr>
+                    <th>📅 Fecha</th>
+                    <th>👤 Cliente</th>
+                    <th>🛒 Productos</th>
+                    <th>💰 Total</th>
+                    <th>🚚 Estado</th>
+                    <th>🔍 Acción</th>
                 </tr>
-            }
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @foreach (var pedido in pedidos.OrderByDescending(p => p.Fecha))
+                {
+                    <tr>
+                        <td>@pedido.Fecha.ToString("dd/MM/yyyy")</td>
+                        <td>@pedido.ClienteEmail</td>
+                        <td>@pedido.Productos</td>
+                        <td><span class="fw-semibold text-success">RD$ @pedido.Total</span></td>
+                        <td class="text-center">
+                            <InputSelect class="form-select form-select-sm border-primary" style="min-width: 120px;"
+                                         @bind-Value="pedido.Estado"
+                                         @onchange="async (_) => await CambiarEstado(pedido.Id, pedido.Estado)">
+                                <option value="Pendiente">Pendiente</option>
+                                <option value="Procesado">Procesado</option>
+                                <option value="Enviado">Enviado</option>
+                                <option value="Entregado">Entregado</option>
+                                <option value="Cancelado">Cancelado</option>
+                            </InputSelect>
+                        </td>
+                        <td class="text-center">
+                            <button class="btn btn-sm btn-outline-secondary" @onclick="@(() => nav.NavigateTo($"/mis-pedidos/{pedido.Id}"))">
+                                <i class="bi bi-eye"></i> Detalle
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 }
 
 @code {

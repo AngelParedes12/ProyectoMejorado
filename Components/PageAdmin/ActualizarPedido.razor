@@ -7,51 +7,66 @@
 @inject NavigationManager nav
 @rendermode InteractiveServer
 
-<h3 class="text-primary mb-4">📝 Actualizar Estado del Pedido</h3>
+<PageTitle>Editar Pedido</PageTitle>
 
-@if (pedido == null)
-{
-    <div class="alert alert-warning">Cargando pedido...</div>
-}
-else
-{
-    <EditForm Model="pedido" OnValidSubmit="ActualizarEstado">
-        <DataAnnotationsValidator />
-        <ValidationSummary />
+<div class="container">
+    <div class="card shadow-lg p-4 rounded-4">
+        <h3 class="text-center text-primary mb-4">
+            📝 Actualizar Estado del Pedido
+        </h3>
 
-        <div class="mb-3">
-            <label class="form-label">Cliente</label>
-            <InputText class="form-control" @bind-Value="pedido.NombreCompleto" disabled />
-        </div>
+        @if (pedido == null)
+        {
+            <div class="alert alert-warning text-center">Cargando pedido...</div>
+        }
+        else
+        {
+            <EditForm Model="pedido" OnValidSubmit="ActualizarEstado">
+                <DataAnnotationsValidator />
+                <ValidationSummary class="text-danger" />
 
-        <div class="mb-3">
-            <label class="form-label">Productos</label>
-            <InputTextArea class="form-control" @bind-Value="pedido.Productos" disabled />
-        </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Cliente</label>
+                        <InputText class="form-control" @bind-Value="pedido.NombreCompleto" disabled />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Teléfono</label>
+                        <InputText class="form-control" @bind-Value="pedido.Telefono" disabled />
+                    </div>
+                </div>
 
-        <div class="mb-3">
-            <label class="form-label">Dirección</label>
-            <InputText class="form-control" @bind-Value="pedido.DireccionEnvio" disabled />
-        </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Productos</label>
+                    <InputTextArea class="form-control" @bind-Value="pedido.Productos" rows="3" disabled />
+                </div>
 
-        <div class="mb-3">
-            <label class="form-label">Estado del Pedido</label>
-            <InputSelect class="form-select" @bind-Value="pedido.Estado">
-                <option value="Pendiente">Pendiente</option>
-                <option value="Procesado">Procesado</option>
-                <option value="Enviado">Enviado</option>
-                <option value="Entregado">Entregado</option>
-                <option value="Cancelado">Cancelado</option>
-            </InputSelect>
-        </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Dirección de Envío</label>
+                    <InputText class="form-control" @bind-Value="pedido.DireccionEnvio" disabled />
+                </div>
 
-        <button class="btn btn-success w-100">💾 Guardar Cambios</button>
-    </EditForm>
-}
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Estado del Pedido</label>
+                    <InputSelect class="form-select" @bind-Value="pedido.Estado">
+                        <option value="Pendiente">Pendiente</option>
+                        <option value="Procesado">Procesado</option>
+                        <option value="Enviado">Enviado</option>
+                        <option value="Entregado">Entregado</option>
+                        <option value="Cancelado">Cancelado</option>
+                    </InputSelect>
+                </div>
+
+                <button class="btn btn-success w-100">
+                    <i class="bi bi-check-circle me-2"></i> Guardar Cambios
+                </button>
+            </EditForm>
+        }
+    </div>
+</div>
 
 @code {
     [Parameter] public int id { get; set; }
-
     private OrdenCliente? pedido;
 
     protected override async Task OnInitializedAsync()
@@ -61,8 +76,11 @@ else
 
     private async Task ActualizarEstado()
     {
-        context.OrdenesClientes.Update(pedido!);
-        await context.SaveChangesAsync();
-        nav.NavigateTo("/admin/ordenes"); // o la vista donde se listan los pedidos
+        if (pedido != null)
+        {
+            context.OrdenesClientes.Update(pedido);
+            await context.SaveChangesAsync();
+            nav.NavigateTo("/admin/pedidos");
+        }
     }
 }

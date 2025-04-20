@@ -14,7 +14,7 @@
 
 @if (orden == null)
 {
-    <div class="alert alert-warning">Cargando orden...</div>
+    <div class="alert alert-warning">No se encontró la orden especificada.</div>
 }
 else
 {
@@ -49,6 +49,12 @@ else
                 </InputSelect>
             </div>
 
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Comentario del Técnico</label>
+                <InputTextArea class="form-control" @bind-Value="orden.ComentarioTecnico" rows="4"
+                               placeholder="Agrega detalles sobre la reparación realizada..." />
+            </div>
+
             <button type="submit" class="btn btn-success w-100">
                 <i class="bi bi-check-circle me-1"></i> Guardar Cambios
             </button>
@@ -71,16 +77,35 @@ else
     protected override async Task OnInitializedAsync()
     {
         orden = await context.OrdenesReparacion.FindAsync(id);
+
+        if (orden == null)
+        {
+            mensaje = "❌ No se encontró la orden con el ID especificado.";
+            alertClass = "alert-danger";
+        }
     }
 
     private async Task GuardarCambios()
     {
+        if (orden == null)
+            return;
+
+        var estadosValidos = new[] { "Pendiente", "En proceso", "Reparado", "Entregado", "Cancelado" };
+
+        if (!estadosValidos.Contains(orden.Estado))
+        {
+            mensaje = "❌ El estado seleccionado no es válido.";
+            alertClass = "alert-warning";
+            return;
+        }
+
         try
         {
-            context.OrdenesReparacion.Update(orden!);
+            context.OrdenesReparacion.Update(orden);
             await context.SaveChangesAsync();
             mensaje = "✅ Estado actualizado correctamente.";
             alertClass = "alert-success";
+
             await Task.Delay(2000);
             nav.NavigateTo("/admin/ordenes");
         }
