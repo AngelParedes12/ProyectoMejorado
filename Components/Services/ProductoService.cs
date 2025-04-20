@@ -13,19 +13,28 @@ namespace ProyectoMejorado.Components.Services
             _context = context;
         }
 
-        // ✅ Para la tienda (sólo productos con stock)
-        public async Task<List<Producto>> ObtenerProductos()
+        // ✅ Nuevo método para mostrar todos los productos, incluyendo los que tienen 0 stock
+        public async Task<List<Producto>> ObtenerTodosParaTienda()
         {
             return await _context.Productos
-                .Where(p => p.CantidadDisponible > 0)
+                .OrderByDescending(p => p.CantidadDisponible > 0)
+                .ThenByDescending(p => p.Id)
+                .ToListAsync();
+        }
+
+        // ✅ Método anterior para el inventario interno (si deseas mantenerlo separado)
+        public async Task<List<Producto>> ObtenerTodos()
+        {
+            return await _context.Productos
                 .OrderByDescending(p => p.Id)
                 .ToListAsync();
         }
 
-        // ✅ Nuevo: para el panel de inventario (incluye todos)
-        public async Task<List<Producto>> ObtenerTodos()
+        // ❌ Solo productos con stock, ya no se usa para la tienda
+        public async Task<List<Producto>> ObtenerProductos()
         {
             return await _context.Productos
+                .Where(p => p.CantidadDisponible > 0)
                 .OrderByDescending(p => p.Id)
                 .ToListAsync();
         }

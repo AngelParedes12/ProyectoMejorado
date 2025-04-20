@@ -1,8 +1,10 @@
 ﻿@page "/carrito"
 @using ProyectoMejorado.Components.Models
 @using ProyectoMejorado.Components.Services
+@using Microsoft.AspNetCore.Components.Authorization
 @inject CarritoService carritoService
 @inject NavigationManager Navigation
+@inject AuthenticationStateProvider authProvider
 @rendermode InteractiveServer
 
 <PageTitle>Carrito</PageTitle>
@@ -67,15 +69,42 @@ else
         <h5 class="fw-bold text-success mb-3 mb-md-0">
             <i class="bi bi-cash-stack me-1"></i> Total: RD$ @total
         </h5>
-        <button class="btn btn-success btn-lg rounded-pill px-4" @onclick="ContinuarCompra">
+        <button class="btn btn-success btn-lg rounded-pill px-4" @onclick="MostrarModalCompra">
             <i class="bi bi-credit-card me-2"></i> Proceder al Pago
         </button>
     </div>
 }
 
+@if (mostrarModal)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 shadow border-0">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title fw-bold">Accede para continuar con tu compra</h5>
+                    <button type="button" class="btn-close" @onclick="CerrarModal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body text-center pb-4">
+                    <button class="btn btn-primary w-100 mb-3 fw-semibold py-2 fs-6" @onclick="IrIniciarSesion">
+                        <i class="bi bi-box-arrow-in-right me-2"></i> Iniciar Sesión
+                    </button>
+
+                    <div class="text-muted mb-2">¿No tienes una cuenta?</div>
+
+                    <button class="btn btn-outline-primary w-100 fw-semibold py-2 fs-6" @onclick="IrRegistrarse">
+                        <i class="bi bi-person-plus me-2"></i> Registrarse
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+
 @code {
     private List<ItemCarrito> items = new();
     private decimal total = 0;
+    private bool mostrarModal = false;
 
     protected override void OnInitialized()
     {
@@ -106,8 +135,42 @@ else
         CargarDatos();
     }
 
-    private void ContinuarCompra()
+    private async Task MostrarModalCompra()
     {
+        var auth = await authProvider.GetAuthenticationStateAsync();
+        var user = auth.User;
+
+        if (user.Identity is not null && user.Identity.IsAuthenticated)
+        {
+            Navigation.NavigateTo("/checkout");
+        }
+        else
+        {
+            mostrarModal = true;
+        }
+    }
+
+    private void IrIniciarSesion()
+    {
+        mostrarModal = false;
+        Navigation.NavigateTo("Account/Login?returnUrl=/checkout");
+    }
+
+    private void IrRegistrarse()
+    {
+        mostrarModal = false;
+        Navigation.NavigateTo("Account/Register");
+    }
+
+
+    private void IrCheckout()
+    {
+        mostrarModal = false;
         Navigation.NavigateTo("/checkout");
+    }
+
+    private void CerrarModal()
+    {
+        mostrarModal = false;
     }
 }
