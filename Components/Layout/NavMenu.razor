@@ -13,14 +13,14 @@
     <!-- Navegación -->
     <nav class="nav flex-column p-3" style="overflow-y: auto; max-height: calc(100vh - 70px);">
 
-        <div class="nav-section-title text-muted mt-2 mb-1">General</div>
+        <div class="nav-section-title">General</div>
         <NavLink class="nav-link" href="/tienda">
             <i class="bi bi-shop-window me-2"></i> Tienda
         </NavLink>
 
         <AuthorizeView Roles="Admin,Empleado,Tecnico">
             <Authorized>
-                <div class="nav-section-title text-muted mt-3 mb-1">Panel de Control</div>
+                <div class="nav-section-title">Panel de Control</div>
                 <NavLink class="nav-link" href="/admin/dashboard"><i class="bi bi-speedometer2 me-2"></i> Dashboard</NavLink>
                 <NavLink class="nav-link" href="/admin/ordenes"><i class="bi bi-tools me-2"></i> Órdenes</NavLink>
                 <NavLink class="nav-link" href="/admin/pedidos"><i class="bi bi-truck me-2"></i> Pedidos</NavLink>
@@ -49,7 +49,7 @@
 
         <AuthorizeView>
             <Authorized Context="user">
-                <div class="nav-section-title text-muted mt-3 mb-1">Cuenta</div>
+                <div class="nav-section-title">Cuenta</div>
 
                 <NavLink class="nav-link" href="Account/Manage">
                     <i class="bi bi-person-circle me-2"></i> @user.User.Identity?.Name
@@ -68,7 +68,7 @@
                 </form>
             </Authorized>
             <NotAuthorized>
-                <div class="nav-section-title text-muted mt-3 mb-1">Acceso</div>
+                <div class="nav-section-title">Acceso</div>
                 <NavLink class="nav-link" href="Account/Register"><i class="bi bi-person-plus-fill me-2"></i> Registrarse</NavLink>
                 <NavLink class="nav-link" href="Account/Login"><i class="bi bi-box-arrow-in-right me-2"></i> Iniciar Sesión</NavLink>
             </NotAuthorized>
@@ -78,18 +78,19 @@
 
 <style>
     .sidebar {
-        background-color: #f8f9fa;
+        background-color: #1c1c1c;
         width: 260px;
         height: 100vh;
         position: fixed;
         top: 0;
         left: 0;
         overflow: hidden;
-        border-right: 1px solid #dee2e6;
+        border-right: 1px solid #2a2a2a;
+        color: white;
     }
 
     .nav-link {
-        color: #333;
+        color: white;
         padding: 10px 15px;
         border-radius: 0.5rem;
         transition: background-color 0.2s, color 0.2s;
@@ -107,11 +108,20 @@
         letter-spacing: 1px;
         padding-left: 15px;
         font-weight: 600;
+        color: #e0e0e0;
     }
 
     .brand {
         user-select: none;
     }
+
+    .btn-link {
+        color: white;
+    }
+
+        .btn-link:hover {
+            color: #d1eaff;
+        }
 </style>
 
 @code {

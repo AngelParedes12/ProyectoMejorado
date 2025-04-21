@@ -6,6 +6,8 @@ using ProyectoMejorado.Components;
 using ProyectoMejorado.Components.Account;
 using ProyectoMejorado.Components.Services;
 using ProyectoMejorado.Data;
+using ProyectoMejorado; // o el nombre de tu proyecto
+
 
 
 var builder = WebApplication.CreateBuilder(args);
